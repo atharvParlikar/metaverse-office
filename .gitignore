@@ -1,0 +1,21 @@
+# Node.js / frontend
+/frontend/node_modules/
+/frontend/.env
+/frontend/dist/
+/frontend/.vite/
+/frontend/package-lock.json
+
+# Backend (Go)
+/backend/tmp/
+/backend/.env
+
+# Logs
+*.log
+
+# OS specific
+.DS_Store
+Thumbs.db
+
+# Build artifacts
+/frontend/build/
+/backend/build/
