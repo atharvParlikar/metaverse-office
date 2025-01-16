@@ -15,3 +15,8 @@ export class Vector2 {
     return { x: this.x, y: this.y };
   }
 }
+
+export type Vector2Raw = {
+  x: number;
+  y: number;
+};
