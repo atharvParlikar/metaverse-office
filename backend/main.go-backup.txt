@@ -1,0 +1,235 @@
+package main
+
+import (
+	"encoding/json"
+	"fmt"
+	"log"
+	"net/http"
+
+	"github.com/gorilla/websocket"
+)
+
+var connId int = 0
+var connections = make(map[int]*websocket.Conn)
+var rooms = make(map[string]map[int]*websocket.Conn)
+var players []PositionMessageRec
+
+var upgrader = websocket.Upgrader{
+	CheckOrigin: func(r *http.Request) bool {
+		return true
+	},
+}
+
+type Message struct {
+	TYPE string          `json:"messageType"`
+	DATA json.RawMessage `json:"data"`
+}
+
+type Input struct {
+	ID        int      `json:"id"`
+	DIRECTION []string `json:"direction"`
+}
+
+type Position struct {
+	X int `json:"x"`
+	Y int `json:"y"`
+}
+
+type PositionMessageSend struct {
+	ID           int      `json:"id"`
+	MESSAGE_TYPE string   `json:"messageType"`
+	POSITION     Position `json:"position"`
+}
+
+type PositionMessageRec struct {
+	ID       int      `json:"id"`
+	POSITION Position `json:"position"`
+}
+
+// for sending
+type DirectionMessage struct {
+	ID           int    `json:"id"`
+	MESSAGE_TYPE string `json:"messageType"`
+	DIRECTION    string `json:"direction"`
+}
+
+type DirectionMessageData struct {
+	ID        int    `json:"id"`
+	DIRECTION string `json:"direction"`
+}
+
+func handleMessage(id int, message []byte) {
+	var baseMessage Message
+
+	if err := json.Unmarshal(message, &baseMessage); err != nil {
+		fmt.Println("Error parsing message\n", err)
+		return
+	}
+	switch baseMessage.TYPE {
+	case "position":
+		fmt.Println("[*] player ", id)
+		var position PositionMessageRec
+		if err := json.Unmarshal(baseMessage.DATA, &position); err != nil {
+			fmt.Println("Error parsing position data\n", err)
+			return
+		}
+
+		// send the position to everyone in the rooom
+		broadcastPlayer("room1", id, PositionMessageSend{
+			ID:           id,
+			MESSAGE_TYPE: "remote-position",
+			POSITION:     position.POSITION,
+		})
+
+	case "position-init":
+		fmt.Println("[*] position-init called")
+		var position struct {
+			POSITION Position `json:"position"`
+		}
+		if err := json.Unmarshal(baseMessage.DATA, &position); err != nil {
+			fmt.Println("[x] Error parsing position-init data")
+			return
+		}
+		players = append(players, PositionMessageRec{
+			ID:       id,
+			POSITION: position.POSITION,
+		})
+		conn := connections[id]
+		conn.WriteJSON(struct {
+			MESSAGE_TYPE string               `json:"messageType"`
+			PLAYERS      []PositionMessageRec `json:"players"`
+		}{
+			MESSAGE_TYPE: "players",
+			PLAYERS:      players,
+		})
+	}
+}
+
+func handleWebSocket(w http.ResponseWriter, r *http.Request) {
+	conn, err := upgrader.Upgrade(w, r, nil)
+
+	if err != nil {
+		log.Println("error creating Upgrader")
+		log.Println(err)
+		return
+	}
+	defer conn.Close()
+
+	localConnId := connId
+	connId++
+
+	connections[localConnId] = conn
+	rooms["room1"][localConnId] = conn
+
+	conn.WriteJSON(struct {
+		ID           int    `json:"id"`
+		MESSAGE_TYPE string `json:"messageType"`
+	}{
+		ID:           localConnId,
+		MESSAGE_TYPE: "id",
+	})
+
+	// conn.WriteJSON(struct {
+	// 	MESSAGE_TYPE string   `json:"messageType"`
+	// 	ID           int      `json:"id"`
+	// 	POSITION     Position `json:"position"`
+	// }{
+	// 	MESSAGE_TYPE: "position-init",
+	// 	ID:           localConnId,
+	// 	POSITION: Position{
+	// 		X: 6,
+	// 		Y: 5 + localConnId,
+	// 	},
+	// })
+
+	conn.WriteJSON(struct {
+		MESSAGE_TYPE string               `json:"messageType"`
+		PLAYERS      []PositionMessageRec `json:"players"`
+	}{
+		MESSAGE_TYPE: "players",
+		PLAYERS:      players,
+	})
+
+	// fmt.Println("players: ", players)
+	// // send the player the list of other players
+	// conn.WriteJSON(struct {
+	// 	MESSAGE_TYPE string               `json:"messageType"`
+	// 	PLAYERS      []PositionMessageRec `json:"players"`
+	// }{
+	// 	MESSAGE_TYPE: "players",
+	// 	PLAYERS:      players,
+	// })
+
+	fmt.Println("[+] IP: ", conn.RemoteAddr(), " | connId: ", connId)
+
+	fmt.Print("[*] iterating through the connection map")
+
+	for id, connection := range rooms["room1"] {
+		fmt.Println("id: ", id)
+		if id != localConnId {
+			//  TODO: currently itsets position based on id, this is some
+			//        hillbilly shit fix this, next time have map state in server.
+
+			fmt.Println("Message sent")
+
+			connection.WriteJSON(PositionMessageSend{
+				ID:           localConnId,
+				MESSAGE_TYPE: "add-player",
+				POSITION: Position{
+					X: 6,
+					Y: 5 + localConnId,
+				},
+			})
+		}
+	}
+
+	for {
+		_, message, err := conn.ReadMessage()
+		if err != nil {
+		}
+		handleMessage(localConnId, message)
+	}
+}
+
+func broadcastPlayer(roomId string, senderId int, message PositionMessageSend) {
+	fmt.Println("[*] broadcasting position by ", senderId, " ", message.POSITION)
+	for id, conn := range rooms[roomId] {
+		if id != senderId {
+			conn.WriteJSON(message)
+		}
+	}
+}
+
+func main() {
+	http.HandleFunc("/ws", handleWebSocket)
+
+	rooms["room1"] = make(map[int]*websocket.Conn)
+
+	port := "8080"
+	fmt.Printf("Starting server on port %s\n\n", port)
+	err := http.ListenAndServe(":"+port, nil)
+	if err != nil {
+		log.Println("Error starting http server:")
+		log.Println(err)
+	}
+
+}
+
+// Context
+//
+// 1. server should know the position of every player every time (not very hard as they keep emiting their position)
+// 2. as every player joins we can send them an array of their position objects
+//    they might look like this.
+//    [{
+//      id: 1,
+//      position: Position{
+//        x: 41,
+//        y: 22
+//      }
+//    }]
+//
+// 3. after being done with this get started with webrtc calls (use peer.js)
+// 4. OPTIONAL
+//     - remote player animations
+//     - custom maps (tilemap implementation)
+//     - group meet, screen sharing
