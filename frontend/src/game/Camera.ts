@@ -18,10 +18,5 @@ export class Camera extends GameObject {
         -heroPosition.y + halfHeight,
       );
     });
-
-    // you stupid shit this is not how it works
-    // events.on("HERO_NEXT_POSITION", this, (heroPosition: Vector2) => {
-    //   console.log("remote peer position: ", heroPosition);
-    // });
   }
 }

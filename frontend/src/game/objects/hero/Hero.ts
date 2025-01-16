@@ -112,11 +112,7 @@ export class Hero extends GameObject {
     events.emit("HERO_POSITION", this.position);
   }
 
-  tryEmitNextPosition(root: GameObject) {
-    const { input } = root;
-
-    if (!input) return;
-
+  tryEmitNextPosition(position: { x: number; y: number }) {
     if (
       this.lastSocketX === this.position.x &&
       this.lastSocketY === this.position.y
@@ -130,8 +126,11 @@ export class Hero extends GameObject {
 
     socket.send(
       JSON.stringify({
-        id: this.id,
-        direction: input.heldDirections,
+        messageType: "position",
+        data: {
+          id: this.id,
+          position: position,
+        },
       }),
     );
   }
@@ -157,8 +156,6 @@ export class Hero extends GameObject {
     let nextX = this.destinationPosition.x;
     let nextY = this.destinationPosition.y;
     const gridSize = 16;
-
-    this.tryEmitNextPosition(root);
 
     if (input.direction === DOWN) {
       this.body.animations?.play("walkDown");
@@ -187,6 +184,8 @@ export class Hero extends GameObject {
     if (isSpaceFree(walls, nextX, nextY)) {
       this.destinationPosition.x = nextX;
       this.destinationPosition.y = nextY;
+
+      this.tryEmitNextPosition({ x: nextX, y: nextY });
     }
   }
 }

@@ -5,101 +5,214 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"sync"
 
 	"github.com/gorilla/websocket"
 )
 
-var connId int = 0
-var connections = make(map[int]*websocket.Conn)
-var rooms = make(map[string][]*websocket.Conn)
-
-var upgrader = websocket.Upgrader{
-	CheckOrigin: func(r *http.Request) bool {
-		return true
-	},
+// GameServer manages the overall game state and connections
+type GameServer struct {
+	rooms           map[string]*Room
+	upgrader        websocket.Upgrader
+	playerIDCounter int
+	mu              sync.RWMutex
 }
 
-type Input struct {
-	ID        int      `json:"id"`
-	DIRECTION []string `json:"direction"`
+// Room represents a game room with connected players
+type Room struct {
+	id      string
+	players map[int]*Player
+	mu      sync.RWMutex
 }
 
-func handleWebSocket(w http.ResponseWriter, r *http.Request) {
-	conn, err := upgrader.Upgrade(w, r, nil)
+// Player represents a connected player
+type Player struct {
+	id       int
+	conn     *websocket.Conn
+	position Position
+}
 
+// Position represents X,Y coordinates
+type Position struct {
+	X int `json:"x"`
+	Y int `json:"y"`
+}
+
+// Message types
+type (
+	BaseMessage struct {
+		Type string          `json:"messageType"`
+		Data json.RawMessage `json:"data"`
+	}
+
+	PositionUpdate struct {
+		ID       int      `json:"id"`
+		Position Position `json:"position"`
+	}
+
+	ClientMessage struct {
+		MessageType string   `json:"messageType"`
+		ID          int      `json:"id"`
+		Position    Position `json:"position"`
+		Players     []Player `json:"players,omitempty"`
+	}
+)
+
+func NewGameServer() *GameServer {
+	return &GameServer{
+		rooms: make(map[string]*Room),
+		upgrader: websocket.Upgrader{
+			CheckOrigin: func(r *http.Request) bool { return true },
+		},
+	}
+}
+
+func (gs *GameServer) createRoom(id string) *Room {
+	room := &Room{
+		id:      id,
+		players: make(map[int]*Player),
+	}
+	gs.mu.Lock()
+	gs.rooms[id] = room
+	gs.mu.Unlock()
+	return room
+}
+
+func (gs *GameServer) getRoom(id string) *Room {
+	gs.mu.RLock()
+	defer gs.mu.RUnlock()
+	return gs.rooms[id]
+}
+
+func (r *Room) addPlayer(player *Player) {
+	r.mu.Lock()
+	r.players[player.id] = player
+	r.mu.Unlock()
+}
+
+func (r *Room) removePlayer(id int) {
+	r.mu.Lock()
+	delete(r.players, id)
+	r.mu.Unlock()
+}
+
+func (r *Room) broadcast(sender int, msg interface{}) {
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+
+	for id, player := range r.players {
+		if id != sender {
+			player.conn.WriteJSON(msg)
+		}
+	}
+}
+
+func (r *Room) getPlayerPositions() []PositionUpdate {
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+
+	positions := make([]PositionUpdate, 0, len(r.players))
+	for id, player := range r.players {
+		positions = append(positions, PositionUpdate{
+			ID:       id,
+			Position: player.position,
+		})
+	}
+	return positions
+}
+
+func (gs *GameServer) handleWebSocket(w http.ResponseWriter, r *http.Request) {
+	conn, err := gs.upgrader.Upgrade(w, r, nil)
 	if err != nil {
-		log.Println("error creating Upgrader")
-		log.Println(err)
+		log.Printf("WebSocket upgrade error: %v", err)
 		return
 	}
 	defer conn.Close()
 
-	connections[connId] = conn
+	gs.mu.Lock()
+	playerID := gs.playerIDCounter
+	gs.playerIDCounter++
+	gs.mu.Unlock()
 
-	conn.WriteJSON(struct {
-		ID           int    `json:"id"`
-		MESSAGE_TYPE string `json:"messageType"`
-	}{
-		ID:           connId,
-		MESSAGE_TYPE: "id",
+	// Create or get the default room
+	room := gs.getRoom("default")
+	if room == nil {
+		room = gs.createRoom("default")
+	}
+
+	// Create new player
+	player := &Player{
+		id:       playerID,
+		conn:     conn,
+		position: Position{X: 6, Y: 5 + playerID}, // Default position
+	}
+	room.addPlayer(player)
+	defer room.removePlayer(playerID)
+
+	// Send initial player data
+	conn.WriteJSON(ClientMessage{
+		MessageType: "id",
+		ID:          playerID,
 	})
 
-	conn.WriteJSON(struct {
-		MESSAGE_TYPE string `json:"messageType"`
-		POSITION     struct {
-			X int `json:"x"`
-			Y int `json:"y"`
-		} `json:"position"`
-	}{
-		MESSAGE_TYPE: "position-init",
-		POSITION: struct {
-			X int `json:"x"`
-			Y int `json:"y"`
-		}{
-			X: 6,
-			Y: 5 + connId,
-		},
+	// Send existing players to new player
+	conn.WriteJSON(ClientMessage{
+		MessageType: "players",
+		Players:     room.getPlayerPositions(),
 	})
 
-	connId++
+	// Notify other players about new player
+	room.broadcast(playerID, ClientMessage{
+		MessageType: "add-player",
+		ID:          playerID,
+		Position:    player.position,
+	})
 
-	rooms["room1"] = append(rooms["room1"], conn)
-
-	fmt.Println("[+] IP: ", conn.RemoteAddr(), " | connId: ", connId-1)
-
+	// Main message loop
 	for {
-		_, message, err := conn.ReadMessage()
-		if err != nil {
-			log.Println("error reading message")
-			log.Println(err)
+		var baseMsg BaseMessage
+		if err := conn.ReadJSON(&baseMsg); err != nil {
+			log.Printf("Read error: %v", err)
+			break
 		}
 
-		var input Input
+		switch baseMsg.Type {
+		case "position":
+			var posUpdate PositionUpdate
+			if err := json.Unmarshal(baseMsg.Data, &posUpdate); err != nil {
+				log.Printf("Position update parse error: %v", err)
+				continue
+			}
 
-		err = json.Unmarshal(message, &input)
+			player.position = posUpdate.Position
+			room.broadcast(playerID, ClientMessage{
+				MessageType: "remote-position",
+				ID:          playerID,
+				Position:    posUpdate.Position,
+			})
 
-		fmt.Println("parsed json: ", input)
-
-		if err != nil {
-			fmt.Println("Error parsing JSON: ", err)
+		case "position-init":
+			var posInit struct {
+				Position Position `json:"position"`
+			}
+			if err := json.Unmarshal(baseMsg.Data, &posInit); err != nil {
+				log.Printf("Position init parse error: %v", err)
+				continue
+			}
+			player.position = posInit.Position
 		}
-
 	}
 }
-
-func broadcast(roomId string, sender *websocket.Conn) {}
 
 func main() {
-	http.HandleFunc("/ws", handleWebSocket)
+	server := NewGameServer()
 
-	rooms["room1"] = []*websocket.Conn{}
+	http.HandleFunc("/ws", server.handleWebSocket)
 
 	port := "8080"
-	fmt.Printf("Starting server on port %s\n\n", port)
-	err := http.ListenAndServe(":"+port, nil)
-	if err != nil {
-		log.Println("Error starting http server:")
-		log.Println(err)
+	fmt.Printf("Starting server on port %s\n", port)
+	if err := http.ListenAndServe(":"+port, nil); err != nil {
+		log.Fatalf("Server error: %v", err)
 	}
-
 }
+
