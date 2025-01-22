@@ -1,0 +1,8 @@
+* Issues
+
+** GameCanvas not rendering
+
+   This only seems to happen on dynamic routes
+   I don't know how and why can't even make a wile guess
+   For now store the roomId in app state or localStorage
+   Use some alert for taking the roomId or use some other page and then store to localStorage and redirect.

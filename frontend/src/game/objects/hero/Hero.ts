@@ -21,6 +21,8 @@ import {
   WALK_UP,
 } from "./heroAnimations";
 
+import { useStore } from "../../../util/store";
+
 export class Hero extends GameObject {
   facingDirection: string;
   destinationPosition: Vector2;
@@ -100,6 +102,20 @@ export class Hero extends GameObject {
     }
 
     this.tryEmitPosition();
+
+    useStore.getState().remotePlayers.forEach((player) => {
+      const distance = Math.sqrt(
+        (player.position.x - this.position.x) ** 2 +
+          (player.position.y - this.position.y) ** 2,
+      );
+      if (distance <= 32) {
+        useStore.getState().setCanCall(true);
+        useStore.getState().setToCall(player);
+      } else {
+        useStore.getState().setCanCall(false);
+        useStore.getState().setToCall(null);
+      }
+    });
   }
 
   tryEmitPosition() {
@@ -124,6 +140,8 @@ export class Hero extends GameObject {
 
     const socket = getSocket();
 
+    if (!socket) return;
+
     socket.send(
       JSON.stringify({
         messageType: "position",
@@ -136,6 +154,9 @@ export class Hero extends GameObject {
   }
 
   tryMove(root: GameObject) {
+    const chatInputActive = useStore.getState().chatInputActive;
+    if (chatInputActive) return;
+
     const { input } = root;
 
     if (!input) return;

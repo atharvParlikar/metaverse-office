@@ -22,6 +22,7 @@ export class RemoteHero extends GameObject {
   destinationPosition: Vector2;
   body: Sprite;
   shadow: Sprite;
+  id: number | null = null;
 
   constructor(x: number, y: number) {
     super({
