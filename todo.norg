@@ -19,10 +19,10 @@
    -- (x) add protected routes
    --- (x) (client) do a auth check in /room route if not redirect to /login
    -- ( ) add auth state to websocket
-   --- ( ) (client) send jwt initally for authentication
-   --- ( ) (server) verify jwt and keep that in state
-   --- ( ) (server) send error message if not authenticated
-   --- ( ) (server) modify the struct to use name and email (maybe) instead of id
+   --- (x) (client) send jwt initally for authentication
+   --- (x) (server) verify jwt and keep that in state
+   --- (x) (server) send error message if not authenticated
+   --- (x) (server) modify the struct to use name
    --- ( ) (client) change id with name in chat
 
    - ( ) use real name instead of id
@@ -34,6 +34,19 @@
    -- (x) Shit that breaks when I do this
    --- (x) ground sprites do not render
    --- (x) player does not render
+   - ( ) camera does not stop capturing even after ending call
+
+** Hard problems (for me cuz me no game dev)
+   - ( ) scale the sprites
+   - ( ) tilemap instead of full image sprites
+
+** Trivial stuff
+   - ( ) add notifications (for sign-in/sign-up/ingame-interactions/auth/errors) (use shadcn)
+
+** Lengdhy problems
+   - ( ) make a UI system (pixelated, minecraft vibe)
+   - ( ) call consent
+   - ( ) player states (working / available / unavailable / focused / etc...)
 
 ** Optional
    - ( ) Animation for remote player
@@ -41,5 +54,5 @@
    - ( ) Full User management
    - ( ) Admin role (really maybe depending if on how hard it is)
    - ( ) Scale the sprites properly to render text on canvas
-   - ( ) use a proper tilemap instead of placing images like  a moron
+   - ( ) use a proper tilemap instead of placing images like a moron
 

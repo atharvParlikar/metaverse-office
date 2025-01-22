@@ -28,6 +28,9 @@ type StoreT = {
   setWsReady: (readyState: boolean) => void;
 
   supabase: SupabaseClient;
+
+  wsAuthenticated: boolean;
+  setWsAuthenticated: (isAuthenticated: boolean) => void;
 };
 
 export const useStore = create<StoreT>((set) => ({
@@ -69,4 +72,8 @@ export const useStore = create<StoreT>((set) => ({
   setWsReady: (readyState) => set(() => ({ wsReady: readyState })),
 
   supabase: createClient(),
+
+  wsAuthenticated: false,
+  setWsAuthenticated: (isAuthenticated: boolean) =>
+    set(() => ({ wsAuthenticated: isAuthenticated })),
 }));

@@ -8,6 +8,7 @@ import (
 	"os"
 	"sync"
 
+	"github.com/golang-jwt/jwt/v5"
 	"github.com/gorilla/websocket"
 	"github.com/joho/godotenv"
 )
@@ -57,15 +58,23 @@ type (
 
 	ChatMessage struct {
 		Id      int    `json:"id"`
+		Name    string `json:"name"`
 		Message string `json:"message"`
 	}
 
+	AuthMessage struct {
+		JWT string `json:"jwt"`
+	}
+
 	ClientMessage struct {
-		MessageType string           `json:"messageType"`
-		ID          int              `json:"id"`
-		Position    Position         `json:"position"`
-		Players     []PositionUpdate `json:"players"`
-		Message     ChatMessage      `json:"message"`
+		MessageType   string           `json:"messageType"`
+		ID            int              `json:"id"`
+		Position      Position         `json:"position"`
+		Players       []PositionUpdate `json:"players"`
+		Message       ChatMessage      `json:"message"`
+		Name          string           `json:"name"`
+		Authenticated bool             `json:"authenticated"`
+		Error         string           `json:"error"`
 	}
 )
 
@@ -114,24 +123,26 @@ func (r *Room) removePlayer(id int) {
 }
 
 // Exclude yourself from getting signal
-func (r *Room) broadcastExclusive(sender int, msg interface{}) {
+func (r *Room) broadcastExclusive(sender int, msg interface{}) error {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 
 	for id, player := range r.players {
 		if id != sender {
-			player.conn.WriteJSON(msg)
+			return sendSecureMessage(player, msg)
 		}
 	}
+	return nil
 }
 
-func (r *Room) broadcast(msg interface{}) {
+func (r *Room) broadcast(msg interface{}) error {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 
 	for _, player := range r.players {
-		player.conn.WriteJSON(msg)
+		return sendSecureMessage(player, msg)
 	}
+	return nil
 }
 
 func (r *Room) getPlayerPositions() []PositionUpdate {
@@ -146,6 +157,18 @@ func (r *Room) getPlayerPositions() []PositionUpdate {
 		})
 	}
 	return positions
+}
+
+func sendSecureMessage(player *Player, message interface{}) error {
+	if !player.isAuthenticated {
+		player.conn.WriteJSON(ClientMessage{
+			MessageType: "error",
+			Error:       "player not authenticated",
+		})
+		return fmt.Errorf("player %v is not authenticated", player.id)
+	}
+
+	return player.conn.WriteJSON(message)
 }
 
 func (gs *GameServer) handleWebSocket(w http.ResponseWriter, r *http.Request) {
@@ -168,10 +191,7 @@ func (gs *GameServer) handleWebSocket(w http.ResponseWriter, r *http.Request) {
 		log.Fatal("Enviornment variables are missing!")
 	}
 
-	gs.mu.Lock()
-	playerID := gs.playerIDCounter
-	gs.playerIDCounter++
-	gs.mu.Unlock()
+	var playerID int
 
 	room := &Room{}
 	player := Player{}
@@ -235,6 +255,71 @@ func (gs *GameServer) handleWebSocket(w http.ResponseWriter, r *http.Request) {
 				},
 			})
 
+		case "auth":
+			var authObject AuthMessage
+
+			if err := json.Unmarshal(baseMsg.Data, &authObject); err != nil {
+				log.Println("Error parsing auth json")
+				return
+			}
+
+			token, err := jwt.Parse(authObject.JWT, func(token *jwt.Token) (interface{}, error) {
+				if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+					return nil, fmt.Errorf("[ERROR] unexpected signing method: %v", token.Header["alg"])
+				}
+				return []byte(jwtSecret), nil
+			})
+
+			if err != nil {
+				log.Fatalf("Error decoding token: %v", err)
+			}
+
+			if claims, ok := token.Claims.(jwt.MapClaims); ok && token.Valid {
+				fmt.Println("Token is valid")
+				metadata := claims["user_metadata"].(map[string]interface{})
+				if metadata["email_verified"].(bool) {
+					email := metadata["email"].(string)
+					name := metadata["display_name"].(string)
+
+					gs.mu.Lock()
+					playerID = gs.playerIDCounter
+					gs.playerIDCounter++
+					gs.mu.Unlock()
+
+					// Create new player
+					player = Player{
+						id:              playerID,
+						conn:            conn,
+						position:        Position{X: 6, Y: 5}, // Default position
+						email:           email,
+						name:            name,
+						isAuthenticated: true,
+					}
+
+					cleanup := func() {
+						conn.Close()
+						room.removePlayer(playerID)
+						fmt.Printf("[-] Player %v left\n", playerID)
+					}
+					defer cleanup()
+
+					// The only place where you use WriteJSON everywhere else you use sendSecureMessage as it is a authenticated middleware
+					conn.WriteJSON(ClientMessage{
+						MessageType:   "auth",
+						Authenticated: true,
+					})
+
+					// Send initial player data
+					sendSecureMessage(&player, ClientMessage{
+						MessageType: "id",
+						ID:          playerID,
+					})
+
+				}
+			} else {
+				fmt.Println("Invalid token")
+			}
+
 		case "room":
 			var roomId struct {
 				RoomId string `json:"roomId"`
@@ -253,30 +338,11 @@ func (gs *GameServer) handleWebSocket(w http.ResponseWriter, r *http.Request) {
 				room = gs.createRoom(roomId.RoomId)
 			}
 
-			// Create new player
-			player := &Player{
-				id:       playerID,
-				conn:     conn,
-				position: Position{X: 6, Y: 5 + playerID}, // Default position
-			}
-			room.addPlayer(player)
+			room.addPlayer(&player)
 			defer room.removePlayer(playerID)
 
-			cleanup := func() {
-				conn.Close()
-				room.removePlayer(playerID)
-				fmt.Printf("[-] Player %v left\n", playerID)
-			}
-			defer cleanup()
-
-			// Send initial player data
-			conn.WriteJSON(ClientMessage{
-				MessageType: "id",
-				ID:          playerID,
-			})
-
 			// Send existing players to new player
-			conn.WriteJSON(ClientMessage{
+			sendSecureMessage(&player, ClientMessage{
 				MessageType: "players",
 				Players:     room.getPlayerPositions(),
 			})
@@ -287,6 +353,12 @@ func (gs *GameServer) handleWebSocket(w http.ResponseWriter, r *http.Request) {
 				ID:          playerID,
 				Position:    player.position,
 			})
+
+		case "debug":
+			fmt.Println("debug:")
+			for key, _ := range gs.rooms["123"].players {
+				fmt.Println("player: ", key)
+			}
 		}
 	}
 }

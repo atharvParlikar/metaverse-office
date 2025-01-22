@@ -1,13 +1,15 @@
 import { useState } from "react";
 import { useStore } from "../util/store";
+import { useNavigate } from "react-router";
 
 export const Login = () => {
   const [email, setMail] = useState<string>("");
   const [password, setPassword] = useState<string>("");
   const { supabase } = useStore();
+  const navigate = useNavigate();
 
   const handleLogin = async () => {
-    const { data, error } = await supabase.auth.signInWithPassword({
+    const { error } = await supabase.auth.signInWithPassword({
       email,
       password,
     });
@@ -19,7 +21,7 @@ export const Login = () => {
     }
 
     console.log("logged in successfully");
-    console.log(data);
+    navigate("/");
   };
 
   return (

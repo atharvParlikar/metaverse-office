@@ -25,6 +25,7 @@ export const GameCanvas = () => {
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const [logs, setLogs] = useState<string[]>([]);
   const [onCall, setOnCall] = useState<boolean>(false);
+
   const connections = useRef<MediaConnection[]>([]);
 
   const log = (str: string) => setLogs((x) => [...x, str]);
@@ -65,7 +66,10 @@ export const GameCanvas = () => {
       "add-player",
       mainScene,
       ({ id, position }: { id: number; position: Vector2 }) => {
-        const newPlayer = new RemoteHero(position.x, position.y);
+        const newPlayer = new RemoteHero(
+          gridCells(position.x),
+          gridCells(position.y),
+        );
         newPlayer.id = id;
         mainScene.addChild(newPlayer);
         addPlayer(id, newPlayer);
@@ -286,7 +290,18 @@ export const GameCanvas = () => {
         >
           {!onCall ? "call" : "disconnect"}
         </button>
-        <button onClick={() => console.log(connections.current)}>Debug</button>
+        <button
+          onClick={() => {
+            const socket = getSocket();
+            socket?.send(
+              JSON.stringify({
+                messageType: "debug",
+              }),
+            );
+          }}
+        >
+          Debug
+        </button>
       </div>
       <p>{toCall && toCall.id}</p>
       <video ref={videoRef} autoPlay />
