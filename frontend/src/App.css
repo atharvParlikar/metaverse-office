@@ -2,11 +2,14 @@ html,
 body {
   padding: 0;
   margin: 0;
-  overflow: hidden;
 }
 
 canvas {
   width: 100%;
   background: skyblue;
   image-rendering: pixelated;
+}
+
+video {
+  transform: scaleX(-1);
 }

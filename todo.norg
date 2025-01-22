@@ -1,0 +1,45 @@
+* TODO
+
+** Essential
+   - (x) Get chat working
+   - (x) Get webrtc working
+   -- (x) detect close players
+   -- (x) setup peer.js
+   -- (x) create interface for starting call
+   -- (x) audio
+   -- (x) video
+
+   - ( ) User management (use supabase)
+   -- (x) add router in frontend
+   -- (x) setup supabase
+   -- (x) setup supabase user databases
+   -- (x) email otp conformation
+   -- (x) create account screen
+   -- (x) add custom login screen
+   -- (x) add protected routes
+   --- (x) (client) do a auth check in /room route if not redirect to /login
+   -- ( ) add auth state to websocket
+   --- ( ) (client) send jwt initally for authentication
+   --- ( ) (server) verify jwt and keep that in state
+   --- ( ) (server) send error message if not authenticated
+   --- ( ) (server) modify the struct to use name and email (maybe) instead of id
+   --- ( ) (client) change id with name in chat
+
+   - ( ) use real name instead of id
+   - ( ) create room interface
+   - ( ) protect a room
+
+** To fix
+   - (x) don't connect to socket server unless in /room/id routes
+   -- (x) Shit that breaks when I do this
+   --- (x) ground sprites do not render
+   --- (x) player does not render
+
+** Optional
+   - ( ) Animation for remote player
+   - ( ) UI with names and shit
+   - ( ) Full User management
+   - ( ) Admin role (really maybe depending if on how hard it is)
+   - ( ) Scale the sprites properly to render text on canvas
+   - ( ) use a proper tilemap instead of placing images like  a moron
+

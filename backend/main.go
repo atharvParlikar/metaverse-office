@@ -5,9 +5,11 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"os"
 	"sync"
 
 	"github.com/gorilla/websocket"
+	"github.com/joho/godotenv"
 )
 
 // GameServer manages the overall game state and connections
@@ -27,9 +29,12 @@ type Room struct {
 
 // Player represents a connected player
 type Player struct {
-	id       int
-	conn     *websocket.Conn
-	position Position
+	id              int
+	name            string
+	email           string
+	conn            *websocket.Conn
+	position        Position
+	isAuthenticated bool
 }
 
 // Position represents X,Y coordinates
@@ -50,11 +55,17 @@ type (
 		Position Position `json:"position"`
 	}
 
+	ChatMessage struct {
+		Id      int    `json:"id"`
+		Message string `json:"message"`
+	}
+
 	ClientMessage struct {
-		MessageType string   `json:"messageType"`
-		ID          int      `json:"id"`
-		Position    Position `json:"position"`
-		Players     []Player `json:"players,omitempty"`
+		MessageType string           `json:"messageType"`
+		ID          int              `json:"id"`
+		Position    Position         `json:"position"`
+		Players     []PositionUpdate `json:"players"`
+		Message     ChatMessage      `json:"message"`
 	}
 )
 
@@ -94,9 +105,16 @@ func (r *Room) removePlayer(id int) {
 	r.mu.Lock()
 	delete(r.players, id)
 	r.mu.Unlock()
+
+	// Notify other players about the disconnection
+	r.broadcastExclusive(id, ClientMessage{
+		MessageType: "player-left",
+		ID:          id,
+	})
 }
 
-func (r *Room) broadcast(sender int, msg interface{}) {
+// Exclude yourself from getting signal
+func (r *Room) broadcastExclusive(sender int, msg interface{}) {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 
@@ -104,6 +122,15 @@ func (r *Room) broadcast(sender int, msg interface{}) {
 		if id != sender {
 			player.conn.WriteJSON(msg)
 		}
+	}
+}
+
+func (r *Room) broadcast(msg interface{}) {
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+
+	for _, player := range r.players {
+		player.conn.WriteJSON(msg)
 	}
 }
 
@@ -129,51 +156,41 @@ func (gs *GameServer) handleWebSocket(w http.ResponseWriter, r *http.Request) {
 	}
 	defer conn.Close()
 
+	// get supabase jwt secret
+	err = godotenv.Load()
+	if err != nil {
+		log.Fatalf("Unable to load .env file: %v", err)
+	}
+
+	jwtSecret := os.Getenv("SUPABASE_JWT_SECRET")
+
+	if jwtSecret == "" {
+		log.Fatal("Enviornment variables are missing!")
+	}
+
 	gs.mu.Lock()
 	playerID := gs.playerIDCounter
 	gs.playerIDCounter++
 	gs.mu.Unlock()
 
-	// Create or get the default room
-	room := gs.getRoom("default")
-	if room == nil {
-		room = gs.createRoom("default")
-	}
-
-	// Create new player
-	player := &Player{
-		id:       playerID,
-		conn:     conn,
-		position: Position{X: 6, Y: 5 + playerID}, // Default position
-	}
-	room.addPlayer(player)
-	defer room.removePlayer(playerID)
-
-	// Send initial player data
-	conn.WriteJSON(ClientMessage{
-		MessageType: "id",
-		ID:          playerID,
-	})
-
-	// Send existing players to new player
-	conn.WriteJSON(ClientMessage{
-		MessageType: "players",
-		Players:     room.getPlayerPositions(),
-	})
-
-	// Notify other players about new player
-	room.broadcast(playerID, ClientMessage{
-		MessageType: "add-player",
-		ID:          playerID,
-		Position:    player.position,
-	})
+	room := &Room{}
+	player := Player{}
 
 	// Main message loop
 	for {
 		var baseMsg BaseMessage
 		if err := conn.ReadJSON(&baseMsg); err != nil {
-			log.Printf("Read error: %v", err)
-			break
+			if websocket.IsCloseError(err,
+				websocket.CloseNormalClosure,
+				websocket.CloseGoingAway,
+				websocket.CloseNoStatusReceived) {
+				// Normal closure, just return silently
+				return
+			}
+
+			// Log only unexpected errors
+			log.Printf("Unexpected connection error: %v", err)
+			return
 		}
 
 		switch baseMsg.Type {
@@ -185,7 +202,7 @@ func (gs *GameServer) handleWebSocket(w http.ResponseWriter, r *http.Request) {
 			}
 
 			player.position = posUpdate.Position
-			room.broadcast(playerID, ClientMessage{
+			room.broadcastExclusive(playerID, ClientMessage{
 				MessageType: "remote-position",
 				ID:          playerID,
 				Position:    posUpdate.Position,
@@ -200,6 +217,76 @@ func (gs *GameServer) handleWebSocket(w http.ResponseWriter, r *http.Request) {
 				continue
 			}
 			player.position = posInit.Position
+
+		case "chat":
+			var message struct {
+				Message string `json:"message"`
+			}
+			if err := json.Unmarshal(baseMsg.Data, &message); err != nil {
+				log.Printf("Error parsing chat message json\n")
+				return
+			}
+			room.broadcast(ClientMessage{
+				MessageType: "chat",
+				ID:          playerID,
+				Message: ChatMessage{
+					Id:      playerID,
+					Message: message.Message,
+				},
+			})
+
+		case "room":
+			var roomId struct {
+				RoomId string `json:"roomId"`
+			}
+			if err := json.Unmarshal(baseMsg.Data, &roomId); err != nil {
+				log.Printf("Error parsing room message")
+				return
+			}
+			fmt.Println("room: ", roomId.RoomId)
+
+			fmt.Printf("[+] Player %v has connected\n", playerID)
+
+			// Create or get the default room
+			room = gs.getRoom(roomId.RoomId)
+			if room == nil {
+				room = gs.createRoom(roomId.RoomId)
+			}
+
+			// Create new player
+			player := &Player{
+				id:       playerID,
+				conn:     conn,
+				position: Position{X: 6, Y: 5 + playerID}, // Default position
+			}
+			room.addPlayer(player)
+			defer room.removePlayer(playerID)
+
+			cleanup := func() {
+				conn.Close()
+				room.removePlayer(playerID)
+				fmt.Printf("[-] Player %v left\n", playerID)
+			}
+			defer cleanup()
+
+			// Send initial player data
+			conn.WriteJSON(ClientMessage{
+				MessageType: "id",
+				ID:          playerID,
+			})
+
+			// Send existing players to new player
+			conn.WriteJSON(ClientMessage{
+				MessageType: "players",
+				Players:     room.getPlayerPositions(),
+			})
+
+			// Notify other players about new player
+			room.broadcastExclusive(playerID, ClientMessage{
+				MessageType: "add-player",
+				ID:          playerID,
+				Position:    player.position,
+			})
 		}
 	}
 }
@@ -215,4 +302,3 @@ func main() {
 		log.Fatalf("Server error: %v", err)
 	}
 }
-
