@@ -9,7 +9,7 @@
    -- (x) audio
    -- (x) video
 
-   - ( ) User management (use supabase)
+   - (x) User management (use supabase)
    -- (x) add router in frontend
    -- (x) setup supabase
    -- (x) setup supabase user databases
@@ -18,14 +18,14 @@
    -- (x) add custom login screen
    -- (x) add protected routes
    --- (x) (client) do a auth check in /room route if not redirect to /login
-   -- ( ) add auth state to websocket
+   -- (x) add auth state to websocket
    --- (x) (client) send jwt initally for authentication
    --- (x) (server) verify jwt and keep that in state
    --- (x) (server) send error message if not authenticated
    --- (x) (server) modify the struct to use name
-   --- ( ) (client) change id with name in chat
+   --- (x) (client) change id with name in chat
 
-   - ( ) use real name instead of id
+   - (x) use real name instead of id
    - ( ) create room interface
    - ( ) protect a room
 
@@ -41,9 +41,10 @@
    - ( ) tilemap instead of full image sprites
 
 ** Trivial stuff
+   - ( ) bug in chat (sometimes you get message sometimes you don't)
    - ( ) add notifications (for sign-in/sign-up/ingame-interactions/auth/errors) (use shadcn)
 
-** Lengdhy problems
+** Lengthy problems
    - ( ) make a UI system (pixelated, minecraft vibe)
    - ( ) call consent
    - ( ) player states (working / available / unavailable / focused / etc...)

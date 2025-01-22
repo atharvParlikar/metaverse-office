@@ -314,13 +314,3 @@ export const GameCanvas = () => {
     </div>
   );
 };
-
-// context
-//
-// you are working on the multiplayer movement
-// you have to do the following
-//
-// 1. create a broadcast function in golang |> DONE
-// 2. handle the position change of players in frontned |> DONE
-// 3. make sure the players joining later also have state
-//    of all previously joined players.

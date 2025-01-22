@@ -5,14 +5,9 @@ import { useStore } from "../util/store";
 
 export type Chat = {
   id: number;
+  name: string;
   message: string;
 };
-
-// TODO
-// 1. write new Chat socket events in the backend |> DONE
-// 2. write chat socket event listeners in here
-// 3. keep history of chat in memory of backend or client (possibally also store in database but later)
-// 4. Render the chat in some pixel art format so it matches the aesthetic
 
 export const ChatPanel = () => {
   const socket = getSocket();
@@ -55,7 +50,7 @@ export const ChatPanel = () => {
           {chatHistory.map((chat, index) => {
             return (
               <div key={index}>
-                {chat.id}:<span>{chat.message}</span>
+                {chat.name}:<span>{chat.message}</span>
               </div>
             );
           })}

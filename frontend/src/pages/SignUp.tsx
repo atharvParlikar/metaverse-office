@@ -1,14 +1,17 @@
 import { useState } from "react";
 import { createClient } from "../util/supabase/client";
+import { useNavigate } from "react-router";
 
 export const SignUp = () => {
   const [email, setMail] = useState<string>("");
   const [username, setUsername] = useState<string>("");
   const [password, setPassword] = useState<string>("");
 
+  const navigate = useNavigate();
+
   const handleSignUp = async () => {
     const supabase = createClient();
-    const { data, error } = await supabase.auth.signUp({
+    const { error } = await supabase.auth.signUp({
       email,
       password,
       options: {
@@ -24,8 +27,7 @@ export const SignUp = () => {
       return;
     }
 
-    console.log("user created successfully");
-    console.log(data);
+    navigate("/");
   };
 
   return (

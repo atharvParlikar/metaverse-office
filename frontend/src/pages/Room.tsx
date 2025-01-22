@@ -3,7 +3,6 @@ import { useRef, useEffect } from "react";
 
 import { ChatPanel } from "../components/ChatPanel";
 import { GameCanvas } from "../components/GameCanvas";
-// import { useNavigate } from "react-router"; // this too
 import {
   addSocketMessageEvent,
   getSocket,
@@ -14,7 +13,6 @@ import { useNavigate } from "react-router";
 
 export const Room = () => {
   const socketRef = useRef<WebSocket | null>(null);
-  // const navigate = useNavigate(); // remember to use to later
   const roomIdSent = useRef<boolean>(false);
   const { wsReady, supabase, wsAuthenticated, setWsAuthenticated } = useStore();
   const navigate = useNavigate();

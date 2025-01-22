@@ -252,6 +252,7 @@ func (gs *GameServer) handleWebSocket(w http.ResponseWriter, r *http.Request) {
 				Message: ChatMessage{
 					Id:      playerID,
 					Message: message.Message,
+					Name:    player.name,
 				},
 			})
 
