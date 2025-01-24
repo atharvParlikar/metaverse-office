@@ -299,7 +299,10 @@ export const GameCanvas = () => {
             const socket = getSocket();
             socket?.send(
               JSON.stringify({
-                messageType: "debug",
+                messageType: "room",
+                data: {
+                  roomId: "123",
+                },
               }),
             );
           }}

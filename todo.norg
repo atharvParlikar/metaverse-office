@@ -37,7 +37,7 @@
    - ( ) camera does not stop capturing even after ending call
    - ( ) sometimes player keeps walking in some direction and does not stop
    -- not sure why this happens investigate
-   - ( ) server is adding same player multiple times if refreshed (or hot reloaded during dev)
+   - (x) server is adding same player multiple times if refreshed (or hot reloaded during dev)
    - ( ) some styles are a little different on safari and Arc (chromium)
 
 ** Hard problems (for me cuz me no game dev)
@@ -45,7 +45,8 @@
    - ( ) tilemap instead of full image sprites
 
 ** Trivial stuff
-   - ( ) bug in chat (sometimes you get message sometimes you don't)
+   - (x) bug in chat (sometimes you get message sometimes you don't) (idk how it fixed itself)
+   - ( ) add shadcn
    - ( ) add notifications (for sign-in/sign-up/ingame-interactions/auth/errors) (use shadcn)
 
 ** Lengthy problems
