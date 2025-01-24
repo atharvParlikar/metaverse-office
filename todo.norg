@@ -46,12 +46,12 @@
 
 ** Trivial stuff
    - (x) bug in chat (sometimes you get message sometimes you don't) (idk how it fixed itself)
-   - ( ) add shadcn
-   - ( ) add notifications (for sign-in/sign-up/ingame-interactions/auth/errors) (use shadcn)
+   - ( ) add shadcn (today)
+   - ( ) add notifications (for sign-in/sign-up/ingame-interactions/auth/errors) (use shadcn) (today)
 
 ** Lengthy problems
    - ( ) make a UI system (pixelated, minecraft vibe)
-   - ( ) call consent
+   - ( ) call consent (today (after setting up shadcn and notifictions))
    - ( ) player states (working / available / unavailable / focused / etc...)
 
 ** Optional

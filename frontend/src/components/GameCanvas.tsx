@@ -236,8 +236,6 @@ export const GameCanvas = () => {
     log("call button clicked!!!");
     console.log("call button clicked!!!");
     if (!peerRef.current) return;
-    if (!toCall) return;
-    if (!toCall.id) return;
 
     if (onCall) {
       connections.current.forEach((connection) => {
@@ -249,6 +247,9 @@ export const GameCanvas = () => {
       });
       return;
     }
+
+    if (!toCall) return;
+    if (!toCall.id) return;
 
     log("got until getMediaDevices");
     const stream = await navigator.mediaDevices.getUserMedia({
@@ -288,7 +289,7 @@ export const GameCanvas = () => {
       <canvas ref={canvasRef} width={320} height={180}></canvas>
       <div>
         <button
-          className={`border-2 border-black p-2 px-4 ${canCall ? "bg-green-400" : "bg-red-600 text-white"}`}
+          className={`border-2 border-black p-2 px-4 ${onCall ? "bg-green-400" : canCall ? "bg-green-400" : "bg-red-600 text-white"}`}
           disabled={onCall ? false : !canCall}
           onClick={handleCall}
         >
