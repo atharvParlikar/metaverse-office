@@ -1,19 +1,36 @@
 import { useState } from "react";
-import { createClient } from "../util/supabase/client";
 import { useNavigate } from "react-router";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
 import { Label } from "../components/ui/label";
+import toast from "react-hot-toast";
+import { useStore } from "../util/store";
 
 export const SignUp = () => {
   const [email, setMail] = useState<string>("");
   const [username, setUsername] = useState<string>("");
   const [password, setPassword] = useState<string>("");
+  const { supabase } = useStore();
 
   const navigate = useNavigate();
 
   const handleSignUp = async () => {
-    const supabase = createClient();
+    const userExists = await supabase
+      .from("user_emails")
+      .select("email")
+      .eq("email", email);
+
+    if (userExists.error) {
+      console.log(userExists.error.message);
+      toast.error("something went wrong please try again");
+      return;
+    }
+
+    if (userExists.data && userExists.data.length > 0) {
+      toast.error("email already registered");
+      return;
+    }
+
     const { error } = await supabase.auth.signUp({
       email,
       password,
@@ -27,6 +44,7 @@ export const SignUp = () => {
     if (error) {
       console.error("error occured while creating user:");
       console.error(error.message);
+      toast.error(error.message);
       return;
     }
 
@@ -74,11 +92,7 @@ export const SignUp = () => {
             </div>
           </div>
         </div>
-        <Button
-          onClick={handleSignUp}
-          size="sm"
-          className="w-full"
-        >
+        <Button onClick={handleSignUp} size="sm" className="w-full">
           Sign Up
         </Button>
       </div>

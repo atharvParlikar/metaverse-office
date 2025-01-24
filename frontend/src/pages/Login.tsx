@@ -4,6 +4,7 @@ import { useNavigate } from "react-router";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
 import { Label } from "../components/ui/label";
+import toast from "react-hot-toast";
 
 export const Login = () => {
   const [email, setMail] = useState<string>("");
@@ -20,6 +21,9 @@ export const Login = () => {
     if (error) {
       console.error("error occured while creating user:");
       console.error(error.message);
+      toast.error("Invalid username or password", {
+        position: "top-right",
+      });
       return;
     }
 
@@ -59,10 +63,7 @@ export const Login = () => {
             </div>
           </div>
         </div>
-        <Button
-          onClick={handleLogin}
-          className="w-full"
-        >
+        <Button onClick={handleLogin} className="w-full">
           Login
         </Button>
       </div>

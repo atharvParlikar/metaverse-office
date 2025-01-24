@@ -46,19 +46,18 @@
 
 ** Trivial stuff
    - (x) bug in chat (sometimes you get message sometimes you don't) (idk how it fixed itself)
-   - ( ) add shadcn (today)
-   - ( ) add notifications (for sign-in/sign-up/ingame-interactions/auth/errors) (use shadcn) (today)
+   - (x) add shadcn (today)
+   - (x) add notifications (for sign-in/sign-up/ingame-interactions/auth/errors) (use shadcn) (today)
 
 ** Lengthy problems
    - ( ) make a UI system (pixelated, minecraft vibe)
    - ( ) call consent (today (after setting up shadcn and notifictions))
-   - ( ) player states (working / available / unavailable / focused / etc...)
+   - ( ) player states (working / available / unavailable / focused / etc...) (today)
 
 ** Optional
-   - ( ) Animation for remote player
-   - ( ) UI with names and shit
+   - ( ) Animation for remote player ( ) UI with names and shit
    - ( ) Full User management
    - ( ) Admin role (really maybe depending if on how hard it is)
    - ( ) Scale the sprites properly to render text on canvas
    - ( ) use a proper tilemap instead of placing images like a moron
-
+   - ( ) add a redis database for persistance
