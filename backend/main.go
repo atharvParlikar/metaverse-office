@@ -332,15 +332,19 @@ func (gs *GameServer) handleWebSocket(w http.ResponseWriter, r *http.Request) {
 				log.Printf("Error parsing room message")
 				return
 			}
-			fmt.Println("room: ", roomId.RoomId)
-
-			fmt.Printf("[+] Player %v has connected\n", playerID)
 
 			// Create or get the default room
 			room = gs.getRoom(roomId.RoomId)
 			if room == nil {
 				room = gs.createRoom(roomId.RoomId)
 			}
+
+			if room.players[playerID] != nil {
+				break
+			}
+
+			fmt.Println("room: ", roomId.RoomId)
+			fmt.Printf("[+] Player %v has connected\n", playerID)
 
 			room.addPlayer(&player)
 			defer room.removePlayer(playerID)
