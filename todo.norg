@@ -28,6 +28,8 @@
    - (x) use real name instead of id
    - ( ) create room interface
    - ( ) protect a room
+   - ( ) optimize clientMessage on the backend that shit is bloated rn
+   - ( ) call consent is only on application level, do it on peer level (otherwise hackers could just emulte a consent from outside the application)
 
 ** To fix
    - (x) don't connect to socket server unless in /room/id routes
@@ -61,3 +63,5 @@
    - ( ) Scale the sprites properly to render text on canvas
    - ( ) use a proper tilemap instead of placing images like a moron
    - ( ) add a redis database for persistance
+   - ( ) websocket rate limiting
+   - ( ) use WSS (TLS)

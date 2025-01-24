@@ -34,6 +34,9 @@ type StoreT = {
 
   remoteVideoStream: MediaStream | null;
   setRemoteVideoStream: (videoStream: MediaStream | null) => void;
+
+  localVideoStream: MediaStream | null;
+  setLocalVideoStream: (videoStream: MediaStream | null) => void;
 };
 
 export const useStore = create<StoreT>((set) => ({
@@ -83,4 +86,8 @@ export const useStore = create<StoreT>((set) => ({
   remoteVideoStream: null,
   setRemoteVideoStream: (videoStream: MediaStream | null) =>
     set(() => ({ remoteVideoStream: videoStream })),
+
+  localVideoStream: null,
+  setLocalVideoStream: (videoStream: MediaStream | null) =>
+    set(() => ({ localVideoStream: videoStream })),
 }));

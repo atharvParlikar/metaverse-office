@@ -24,6 +24,9 @@ export const initializeSocket = (URL: string) => {
     const parsedMessage = JSON.parse(e.data);
     const { messageType } = parsedMessage;
 
+    console.log(messageType, ": ", parsedMessage);
+    console.log(socketEvents.has(messageType));
+
     if (socketEvents.has(messageType)) {
       socketEvents.get(messageType)!(parsedMessage);
     }

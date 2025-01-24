@@ -75,6 +75,7 @@ type (
 		Name          string           `json:"name"`
 		Authenticated bool             `json:"authenticated"`
 		Error         string           `json:"error"`
+		Answer        bool             `json:"answer"`
 	}
 )
 
@@ -360,6 +361,39 @@ func (gs *GameServer) handleWebSocket(w http.ResponseWriter, r *http.Request) {
 				MessageType: "add-player",
 				ID:          playerID,
 				Position:    player.position,
+			})
+
+		case "callConsentReq":
+			var playerId struct {
+				ID int `json:"id"`
+			}
+
+			if err := json.Unmarshal(baseMsg.Data, &playerId); err != nil {
+				log.Println("error parsing callConsentReq json")
+				break
+			}
+
+			gs.rooms["123"].players[playerId.ID].conn.WriteJSON(ClientMessage{
+				MessageType: "callConsentReq",
+				ID:          playerID,
+			})
+
+		case "callConsentAns":
+			var answer struct {
+				ID     int  `json:"id"`
+				Answer bool `json:"answer"`
+			}
+
+			if err := json.Unmarshal(baseMsg.Data, &answer); err != nil {
+				log.Println("error parsing callConsentAns json")
+				break
+			}
+
+			fmt.Printf("[*] callConsentAns: {%v, %v}\n", answer.ID, answer.Answer)
+
+			gs.rooms["123"].players[answer.ID].conn.WriteJSON(ClientMessage{
+				MessageType: "callConsentAns",
+				Answer:      answer.Answer,
 			})
 
 		case "debug":
