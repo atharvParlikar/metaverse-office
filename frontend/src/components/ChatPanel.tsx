@@ -2,6 +2,7 @@
 import React, { useEffect, useState } from "react";
 import { addSocketMessageEvent, getSocket } from "../util/socketChannel";
 import { useStore } from "../util/store";
+import { Input } from "./ui/input";
 
 export type Chat = {
   id: number;
@@ -9,7 +10,7 @@ export type Chat = {
   message: string;
 };
 
-export const ChatPanel = () => {
+export const ChatPanel = ({ className }: { className?: string }) => {
   const socket = getSocket();
   const { id, chatHistory, addChat, setChatInputActive, wsReady } = useStore();
   const [message, setMessage] = useState<string>("");
@@ -18,6 +19,7 @@ export const ChatPanel = () => {
     if (!socket) return;
 
     addSocketMessageEvent("chat", (parsedMessage) => {
+      console.log("parsedMessage: ", parsedMessage);
       const msg: Chat = parsedMessage.message; // parsedMessage.message has same structure as Chat
       if (!id) return;
       addChat(msg);
@@ -28,6 +30,8 @@ export const ChatPanel = () => {
   const handleSubmit = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (!socket) return null;
     if (!wsReady) return null;
+
+    if (message.length === 0) return;
 
     if (e.key === "Enter") {
       socket.send(
@@ -43,28 +47,34 @@ export const ChatPanel = () => {
   };
 
   return (
-    <div className="flex flex-col justify-between">
-      <div>
-        <h1 className="text-2xl">Chat</h1>
-        <div className="flex flex-col gap-2">
+    <div className={`${className} flex flex-col h-full`}>
+      <h1 className="text-2xl mx-2">Chat</h1>
+      <div className="h-full overflow-scroll">
+        <div className="flex flex-col gap-2 p-2 my-2">
           {chatHistory.map((chat, index) => {
+            console.log(chat.name);
+            console.log(chat.message);
             return (
               <div key={index}>
-                {chat.name}:<span>{chat.message}</span>
+                <span className="text-base">{chat.name}</span>
+                {": "}
+                <span className="text-base">{chat.message}</span>
               </div>
             );
           })}
         </div>
       </div>
-      <input
-        onFocus={() => setChatInputActive(true)}
-        onBlur={() => setChatInputActive(false)}
-        value={message}
-        onChange={(e) => setMessage(e.target.value)}
-        onKeyDown={handleSubmit}
-        className="border-2 border-black rounded-md w-[92%] mx-[4%] p-1"
-        placeholder="Chat..."
-      />
+      <div className="bg-white">
+        <Input
+          onFocus={() => setChatInputActive(true)}
+          onBlur={() => setChatInputActive(false)}
+          value={message}
+          onChange={(e) => setMessage(e.target.value)}
+          onKeyDown={handleSubmit}
+          className="border-2 border-black w-[92%] mx-[4%] p-1 text-gray-600 my-4"
+          placeholder="Chat..."
+        />
+      </div>
     </div>
   );
 };

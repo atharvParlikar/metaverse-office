@@ -21,8 +21,15 @@ export const GameCanvas = () => {
   const peerRef = useRef<Peer | null>(null);
   const socket = getSocket();
   const positionInitSent = useRef<boolean>(false);
-  const { id, setId, addPlayer, canCall, toCall, wsReady } = useStore();
-  const videoRef = useRef<HTMLVideoElement | null>(null);
+  const {
+    id,
+    setId,
+    addPlayer,
+    canCall,
+    toCall,
+    wsReady,
+    setRemoteVideoStream,
+  } = useStore();
   const [logs, setLogs] = useState<string[]>([]);
   const [onCall, setOnCall] = useState<boolean>(false);
 
@@ -196,8 +203,7 @@ export const GameCanvas = () => {
       call.answer(stream);
       call.on("stream", (remoteStream) => {
         //  TODO: do better error management
-        if (!videoRef.current) return;
-        videoRef.current.srcObject = remoteStream;
+        setRemoteVideoStream(remoteStream);
         setOnCall(true);
       });
 
@@ -214,7 +220,7 @@ export const GameCanvas = () => {
         });
         connections.current = [];
         setOnCall(false);
-        if (videoRef.current) videoRef.current.srcObject = null;
+        setRemoteVideoStream(null);
       });
 
       connections.current = [...connections.current, call];
@@ -254,9 +260,7 @@ export const GameCanvas = () => {
 
     const call = peer.call(toCall.id?.toString(), stream);
     call.on("stream", (remoteStream) => {
-      //  TODO: do better error management
-      if (!videoRef.current) return;
-      videoRef.current.srcObject = remoteStream;
+      setRemoteVideoStream(remoteStream);
       setOnCall(true);
     });
 
@@ -273,7 +277,7 @@ export const GameCanvas = () => {
       });
       connections.current = [];
       setOnCall(false);
-      if (videoRef.current) videoRef.current.srcObject = null;
+      setRemoteVideoStream(null);
     });
 
     connections.current = [...connections.current, call];
@@ -285,7 +289,7 @@ export const GameCanvas = () => {
       <div>
         <button
           className={`border-2 border-black p-2 px-4 ${canCall ? "bg-green-400" : "bg-red-600 text-white"}`}
-          disabled={!canCall}
+          disabled={onCall ? false : !canCall}
           onClick={handleCall}
         >
           {!onCall ? "call" : "disconnect"}
@@ -304,7 +308,6 @@ export const GameCanvas = () => {
         </button>
       </div>
       <p>{toCall && toCall.id}</p>
-      <video ref={videoRef} autoPlay />
       <p>Logs</p>
       <ul>
         {logs.map((log, index) => (

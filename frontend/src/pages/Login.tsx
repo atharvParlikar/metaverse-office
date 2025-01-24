@@ -1,6 +1,9 @@
 import { useState } from "react";
 import { useStore } from "../util/store";
 import { useNavigate } from "react-router";
+import { Button } from "../components/ui/button";
+import { Input } from "../components/ui/input";
+import { Label } from "../components/ui/label";
 
 export const Login = () => {
   const [email, setMail] = useState<string>("");
@@ -25,37 +28,43 @@ export const Login = () => {
   };
 
   return (
-    <div className="w-screen h-screen flex justify-center items-center font-mono">
-      <div className="flex flex-col gap-4 items-start">
-        <div>
-          <h1 className="text-xl">Login</h1>
-          <div className="w-full h-[1px] bg-gray-400 my-4 " />
-          <p>Email</p>
-          <input
-            value={email}
-            onChange={(e) => setMail(e.target.value)}
-            placeholder="you@mail.com"
-            type="text"
-            className="p-1 w-60"
-          />
+    <div className="w-screen h-screen flex justify-center items-center">
+      <div className="flex flex-col gap-6 items-start w-80">
+        <div className="w-full">
+          <h1 className="font-press-start text-xl mb-4">Login</h1>
+          <div className="w-full h-[2px] bg-[#1A1A1A] mb-6" />
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label>Email</Label>
+              <Input
+                value={email}
+                onChange={(e) => setMail(e.target.value)}
+                placeholder="you@mail.com"
+                type="text"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Password</Label>
+              <Input
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="******"
+                type="password"
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    handleLogin();
+                  }
+                }}
+              />
+            </div>
+          </div>
         </div>
-        <div>
-          <p>Password</p>
-          <input
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            placeholder="******"
-            type="password"
-            className="p-1"
-          />
-        </div>
-
-        <button
-          className="hover:bg-black hover:text-slate-50 rounded-md p-2 shadow-[rgba(17,_17,_26,_0.1)_0px_0px_16px]"
+        <Button
           onClick={handleLogin}
+          className="w-full"
         >
-          login
-        </button>
+          Login
+        </Button>
       </div>
     </div>
   );

@@ -10,6 +10,7 @@ import {
 } from "../util/socketChannel";
 import { useStore } from "../util/store";
 import { useNavigate } from "react-router";
+import { VideoCall } from "../components/VideoCall";
 
 export const Room = () => {
   const socketRef = useRef<WebSocket | null>(null);
@@ -86,7 +87,10 @@ export const Room = () => {
   return (
     <div className="grid grid-cols-[4fr_1fr]">
       <GameCanvas />
-      <ChatPanel />
+      <div className="flex flex-col h-full ">
+        <VideoCall />
+        <ChatPanel />
+      </div>
     </div>
   );
 };

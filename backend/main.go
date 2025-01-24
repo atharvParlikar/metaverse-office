@@ -140,7 +140,10 @@ func (r *Room) broadcast(msg interface{}) error {
 	defer r.mu.RUnlock()
 
 	for _, player := range r.players {
-		return sendSecureMessage(player, msg)
+		if err := sendSecureMessage(player, msg); err != nil {
+			log.Printf("Error sending message: %v", err)
+			return err
+		}
 	}
 	return nil
 }

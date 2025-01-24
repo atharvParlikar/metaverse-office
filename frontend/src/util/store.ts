@@ -31,6 +31,9 @@ type StoreT = {
 
   wsAuthenticated: boolean;
   setWsAuthenticated: (isAuthenticated: boolean) => void;
+
+  remoteVideoStream: MediaStream | null;
+  setRemoteVideoStream: (videoStream: MediaStream | null) => void;
 };
 
 export const useStore = create<StoreT>((set) => ({
@@ -76,4 +79,8 @@ export const useStore = create<StoreT>((set) => ({
   wsAuthenticated: false,
   setWsAuthenticated: (isAuthenticated: boolean) =>
     set(() => ({ wsAuthenticated: isAuthenticated })),
+
+  remoteVideoStream: null,
+  setRemoteVideoStream: (videoStream: MediaStream | null) =>
+    set(() => ({ remoteVideoStream: videoStream })),
 }));

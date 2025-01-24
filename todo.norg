@@ -35,6 +35,10 @@
    --- (x) ground sprites do not render
    --- (x) player does not render
    - ( ) camera does not stop capturing even after ending call
+   - ( ) sometimes player keeps walking in some direction and does not stop
+   -- not sure why this happens investigate
+   - ( ) server is adding same player multiple times if refreshed (or hot reloaded during dev)
+   - ( ) some styles are a little different on safari and Arc (chromium)
 
 ** Hard problems (for me cuz me no game dev)
    - ( ) scale the sprites
