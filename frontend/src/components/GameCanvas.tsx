@@ -13,29 +13,15 @@ import { addSocketMessageEvent, getSocket } from "../util/socketChannel";
 import { events } from "../game/Events";
 import { RemoteHero } from "../game/objects/hero/RemoteHero";
 import { useStore } from "../util/store";
-import Peer, { MediaConnection } from "peerjs";
-import toast from "react-hot-toast";
-import { PhoneIncoming, PhoneMissed } from "lucide-react";
+import { MediaConnection } from "peerjs";
 
 export const GameCanvas = () => {
   const canvasRef = useRef<HTMLCanvasElement | null>(null!);
   const heroRef = useRef<Hero | null>(null!);
-  const peerRef = useRef<Peer | null>(null);
   const socket = getSocket();
   const positionInitSent = useRef<boolean>(false);
-  const {
-    id,
-    setId,
-    addPlayer,
-    canCall,
-    toCall,
-    wsReady,
-    setRemoteVideoStream,
-  } = useStore();
+  const { setId, addPlayer, canCall, toCall, wsReady, onCall } = useStore();
   const [logs, setLogs] = useState<string[]>([]);
-  const [onCall, setOnCall] = useState<boolean>(false);
-  const userCallConsent = useRef<boolean>(false);
-  const [remoteCallConsent, setRemoteCallConsent] = useState<boolean>(false);
 
   const connections = useRef<MediaConnection[]>([]);
 
@@ -186,120 +172,7 @@ export const GameCanvas = () => {
         });
       }
     });
-
-    addSocketMessageEvent("callConsentReq", (parsedMessage) => {
-      const { id } = parsedMessage;
-      toast.custom(
-        <div className="flex flex-col bg-white rounded-md p-2 drop-shadow-lg text-center border-2 border-black">
-          <span>User {id} is calling</span>
-          <div className="flex justify-between">
-            <div
-              className="p-1 bg-green-500 rounded-md cursor-pointer border-2 border-black"
-              onClick={() => {
-                socket.send(
-                  JSON.stringify({
-                    messageType: "callConsentAns",
-                    data: {
-                      id,
-                      answer: true,
-                    },
-                  }),
-                );
-                userCallConsent.current = true;
-                toast.dismiss();
-              }}
-            >
-              <PhoneIncoming />
-            </div>
-
-            <div
-              className="p-1 bg-red-500 rounded-md cursor-pointer border-2 border-black"
-              onClick={() => {
-                socket.send(
-                  JSON.stringify({
-                    messageType: "callConsentAns",
-                    data: {
-                      id,
-                      answer: false,
-                    },
-                  }),
-                );
-                userCallConsent.current = false;
-                toast.dismiss();
-              }}
-            >
-              <PhoneMissed />
-            </div>
-          </div>
-        </div>,
-      );
-    });
-
-    addSocketMessageEvent("callConsentAns", (parsedMessage) => {
-      console.log(parsedMessage);
-      const { answer }: { answer: boolean } = parsedMessage;
-      console.log("answer: ", answer);
-      setRemoteCallConsent(answer);
-    });
   }, [socket, wsReady]);
-
-  // peerjs stuff
-  useEffect(() => {
-    if (!id) return;
-    //  NOTE: maybe put this as global state in zustand store
-    const peer = new Peer(id.toString(), {
-      host: "localhost",
-      port: 9000,
-      path: "/frontend",
-    });
-    peerRef.current = peer;
-
-    peer.on("call", async (call) => {
-      console.log("Got call, ", userCallConsent);
-      if (!userCallConsent) return;
-      userCallConsent.current = false;
-      console.log("got here");
-
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: true,
-        audio: false,
-      });
-      call.answer(stream);
-      call.on("stream", (remoteStream) => {
-        //  TODO: do better error management
-        setRemoteVideoStream(remoteStream);
-        setOnCall(true);
-      });
-
-      call.on("close", () => {
-        console.log("Got close signal");
-        connections.current.forEach((connection) => {
-          if (connection.remoteStream) {
-            // stopping remote tracks
-            connection.remoteStream.getTracks().forEach((track) => {
-              track.stop();
-            });
-            // stopping local tracks
-            connection.localStream.getTracks().forEach((track) => {
-              track.stop();
-            });
-            connection.close();
-          }
-        });
-        connections.current = [];
-        setOnCall(false);
-        setRemoteVideoStream(null);
-      });
-
-      connections.current = [...connections.current, call];
-    });
-
-    return () => {
-      connections.current.forEach((connection) => connection.close());
-      connections.current = [];
-      peer.destroy();
-    };
-  }, [id]);
 
   const handleCall = async () => {
     log("call button clicked!!!");
@@ -329,48 +202,6 @@ export const GameCanvas = () => {
       }),
     );
   };
-
-  useEffect(() => {
-    const call = async () => {
-      if (!peerRef.current) return;
-      if (!remoteCallConsent) return;
-      if (!toCall?.id) return;
-
-      log("got until getMediaDevices");
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: true,
-        audio: false,
-      });
-
-      const peer = peerRef.current;
-
-      const call = peer.call(toCall.id?.toString(), stream);
-      call.on("stream", (remoteStream) => {
-        setRemoteVideoStream(remoteStream);
-        setOnCall(true);
-      });
-
-      call.on("close", () => {
-        console.log("Got close signal");
-        connections.current.forEach((connection) => {
-          if (connection.remoteStream) {
-            connection.remoteStream.getTracks().forEach((track) => {
-              console.log("stopping track: ", track.kind);
-              track.stop();
-            });
-            connection.close();
-          }
-        });
-        connections.current = [];
-        setOnCall(false);
-        setRemoteVideoStream(null);
-      });
-
-      connections.current = [...connections.current, call];
-    };
-
-    call();
-  }, [remoteCallConsent]);
 
   return (
     <div>

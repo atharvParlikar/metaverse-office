@@ -37,6 +37,15 @@ type StoreT = {
 
   localVideoStream: MediaStream | null;
   setLocalVideoStream: (videoStream: MediaStream | null) => void;
+
+  userCallConsent: boolean;
+  setUserCallConsent: (consent: boolean) => void;
+
+  remoteCallConsent: boolean;
+  setRemoteCallConsent: (consent: boolean) => void;
+
+  onCall: boolean;
+  setOnCall: (onCall: boolean) => void;
 };
 
 export const useStore = create<StoreT>((set) => ({
@@ -90,4 +99,15 @@ export const useStore = create<StoreT>((set) => ({
   localVideoStream: null,
   setLocalVideoStream: (videoStream: MediaStream | null) =>
     set(() => ({ localVideoStream: videoStream })),
+
+  userCallConsent: false,
+  setUserCallConsent: (consent: boolean) =>
+    set(() => ({ userCallConsent: consent })),
+
+  remoteCallConsent: false,
+  setRemoteCallConsent: (consent: boolean) =>
+    set(() => ({ remoteCallConsent: consent })),
+
+  onCall: false,
+  setOnCall: (onCall: boolean) => set(() => ({ onCall })),
 }));
