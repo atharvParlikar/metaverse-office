@@ -32,7 +32,7 @@ export const Login = () => {
   };
 
   return (
-    <div className="w-screen h-screen flex justify-center items-center">
+    <div className="w-screen h-screen flex flex-col gap-4 justify-center items-center">
       <div className="flex flex-col gap-6 items-start w-80">
         <div className="w-full">
           <h1 className="font-press-start text-xl mb-4">Login</h1>
@@ -52,7 +52,7 @@ export const Login = () => {
               <Input
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                placeholder="******"
+                placeholder="********"
                 type="password"
                 onKeyDown={(e) => {
                   if (e.key === "Enter") {
@@ -67,6 +67,14 @@ export const Login = () => {
           Login
         </Button>
       </div>
+      <p
+        onClick={() => {
+          navigate("/forgotPassword");
+        }}
+        className="underline cursor-pointer"
+      >
+        Forgot Password
+      </p>
     </div>
   );
 };

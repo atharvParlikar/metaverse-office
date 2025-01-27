@@ -13,7 +13,7 @@ import { useNavigate } from "react-router";
 import { VideoCall } from "../components/VideoCall";
 import toast from "react-hot-toast";
 import { PhoneIncoming, PhoneMissed } from "lucide-react";
-import Peer, { MediaConnection } from "peerjs";
+import Peer from "peerjs";
 
 export const Room = () => {
   const socketRef = useRef<WebSocket | null>(null);
@@ -30,11 +30,13 @@ export const Room = () => {
     setRemoteVideoStream,
     setOnCall,
     toCall,
+    connections,
+    setConnections,
   } = useStore();
   const navigate = useNavigate();
 
-  const connections = useRef<MediaConnection[]>([]);
   const peerRef = useRef<Peer | null>(null);
+  const mediaStreamRef = useRef<MediaStream | null>(null);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -144,10 +146,14 @@ export const Room = () => {
       if (!remoteCallConsent) return;
       if (!toCall?.id) return;
 
+      console.log("got till here");
+
       const stream = await navigator.mediaDevices.getUserMedia({
         video: true,
         audio: false,
       });
+
+      mediaStreamRef.current = stream;
 
       const peer = peerRef.current;
 
@@ -161,21 +167,19 @@ export const Room = () => {
 
       call.on("close", () => {
         console.log("Got close signal");
-        connections.current.forEach((connection) => {
-          if (connection.remoteStream) {
-            connection.remoteStream.getTracks().forEach((track) => {
-              console.log("stopping track: ", track.kind);
-              track.stop();
-            });
-            connection.close();
-          }
-        });
-        connections.current = [];
+
+        if (mediaStreamRef.current) {
+          mediaStreamRef.current.getTracks().forEach((track) => {
+            track.stop();
+          });
+        }
+
+        setConnections([]);
         setOnCall(false);
         setRemoteVideoStream(null);
       });
 
-      connections.current = [...connections.current, call];
+      setConnections([...connections, call]);
     };
 
     call();
@@ -202,6 +206,9 @@ export const Room = () => {
         video: true,
         audio: false,
       });
+
+      mediaStreamRef.current = stream;
+
       call.answer(stream);
       call.on("stream", (remoteStream) => {
         //  TODO: do better error management
@@ -211,30 +218,21 @@ export const Room = () => {
 
       call.on("close", () => {
         console.log("Got close signal");
-        connections.current.forEach((connection) => {
-          if (connection.remoteStream) {
-            // stopping remote tracks
-            connection.remoteStream.getTracks().forEach((track) => {
-              track.stop();
-            });
-            // stopping local tracks
-            connection.localStream.getTracks().forEach((track) => {
-              track.stop();
-            });
-            connection.close();
-          }
-        });
-        connections.current = [];
+        if (mediaStreamRef.current) {
+          mediaStreamRef.current.getTracks().forEach((track) => {
+            track.stop();
+          });
+        }
         setOnCall(false);
         setRemoteVideoStream(null);
       });
 
-      connections.current = [...connections.current, call];
+      setConnections([...connections, call]);
     });
 
     return () => {
-      connections.current.forEach((connection) => connection.close());
-      connections.current = [];
+      connections.forEach((connection) => connection.close());
+      setConnections([]);
       peer.destroy();
     };
   }, [id]);

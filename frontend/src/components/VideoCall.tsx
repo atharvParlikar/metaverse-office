@@ -20,7 +20,7 @@ export function VideoCall({ className }: { className?: string }) {
         />
       ) : (
         <div className="flex items-center justify-center border-2 border-black">
-          No Signal :(
+          No Signal :X
         </div>
       )}
     </div>

@@ -26,7 +26,6 @@
    --- (x) (client) change id with name in chat
 
    - (x) use real name instead of id
-   - ( ) create room interface
    - ( ) protect a room
    - ( ) optimize clientMessage on the backend that shit is bloated rn
    - ( ) call consent is only on application level, do it on peer level (otherwise hackers could just emulte a consent from outside the application)
@@ -36,11 +35,10 @@
    -- (x) Shit that breaks when I do this
    --- (x) ground sprites do not render
    --- (x) player does not render
-   - ( ) camera does not stop capturing even after ending call
+   - (x) camera does not stop capturing even after ending call
    - ( ) sometimes player keeps walking in some direction and does not stop
    -- not sure why this happens investigate
    - (x) server is adding same player multiple times if refreshed (or hot reloaded during dev)
-   - ( ) some styles are a little different on safari and Arc (chromium)
 
 ** Hard problems (for me cuz me no game dev)
    - ( ) scale the sprites
@@ -48,12 +46,12 @@
 
 ** Trivial stuff
    - (x) bug in chat (sometimes you get message sometimes you don't) (idk how it fixed itself)
-   - (x) add shadcn (today)
-   - (x) add notifications (for sign-in/sign-up/ingame-interactions/auth/errors) (use shadcn) (today)
+   - (x) add shadcn
+   - (x) add notifications (for sign-in/sign-up/ingame-interactions/auth/errors) (use shadcn)
 
 ** Lengthy problems
-   - ( ) make a UI system (pixelated, minecraft vibe)
-   - ( ) call consent (today (after setting up shadcn and notifictions))
+   - (x) make a UI system (pixelated, minecraft vibe)
+   - (x) call consent (today (after setting up shadcn and notifictions))
    - ( ) player states (working / available / unavailable / focused / etc...) (today)
 
 ** Optional

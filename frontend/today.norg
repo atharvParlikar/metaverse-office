@@ -1,0 +1,17 @@
+* Todo
+
+** Metaverse Project
+
+   - ( ) user management dashboard (high) (2 hrs)
+   -- ( ) displayName
+   -- ( ) userName
+   -- ( ) logout
+   -- ( ) change password
+   - ( ) make chat prettier
+   - ( ) protect a room (mid) (1 hr)
+   - ( ) invite button (mid) (15 min)
+   - ( ) make the otp email a little prettier (mid) (20 min)
+   - ( ) Player states (also show player states) (low) (prerequisit - tilemap)
+
+** Career
+   - ( ) look for companies (20 mins)

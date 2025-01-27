@@ -3,6 +3,7 @@ import { Chat } from "../components/ChatPanel";
 import { RemoteHero } from "../game/objects/hero/RemoteHero";
 import { createClient } from "./supabase/client";
 import { SupabaseClient } from "@supabase/supabase-js";
+import { MediaConnection } from "peerjs";
 
 type StoreT = {
   chatHistory: Chat[];
@@ -31,6 +32,9 @@ type StoreT = {
 
   wsAuthenticated: boolean;
   setWsAuthenticated: (isAuthenticated: boolean) => void;
+
+  connections: MediaConnection[];
+  setConnections: (connection: MediaConnection[]) => void;
 
   remoteVideoStream: MediaStream | null;
   setRemoteVideoStream: (videoStream: MediaStream | null) => void;
@@ -91,6 +95,10 @@ export const useStore = create<StoreT>((set) => ({
   wsAuthenticated: false,
   setWsAuthenticated: (isAuthenticated: boolean) =>
     set(() => ({ wsAuthenticated: isAuthenticated })),
+
+  connections: [],
+  setConnections: (connections: MediaConnection[]) =>
+    set(() => ({ connections })),
 
   remoteVideoStream: null,
   setRemoteVideoStream: (videoStream: MediaStream | null) =>

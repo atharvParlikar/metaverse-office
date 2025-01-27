@@ -13,17 +13,15 @@ import { addSocketMessageEvent, getSocket } from "../util/socketChannel";
 import { events } from "../game/Events";
 import { RemoteHero } from "../game/objects/hero/RemoteHero";
 import { useStore } from "../util/store";
-import { MediaConnection } from "peerjs";
 
 export const GameCanvas = () => {
   const canvasRef = useRef<HTMLCanvasElement | null>(null!);
   const heroRef = useRef<Hero | null>(null!);
   const socket = getSocket();
   const positionInitSent = useRef<boolean>(false);
-  const { setId, addPlayer, canCall, toCall, wsReady, onCall } = useStore();
+  const { setId, addPlayer, canCall, toCall, wsReady, onCall, connections } =
+    useStore();
   const [logs, setLogs] = useState<string[]>([]);
-
-  const connections = useRef<MediaConnection[]>([]);
 
   const log = (str: string) => setLogs((x) => [...x, str]);
 
@@ -179,11 +177,7 @@ export const GameCanvas = () => {
     console.log("call button clicked!!!");
 
     if (onCall) {
-      connections.current.forEach((connection) => {
-        connection.remoteStream.getTracks().forEach((track) => {
-          console.log(track.kind);
-          track.stop();
-        });
+      connections.forEach((connection) => {
         connection.close();
       });
       return;
