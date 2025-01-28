@@ -53,6 +53,7 @@ type (
 
 	PositionUpdate struct {
 		ID       int      `json:"id"`
+		Name     string   `json:"name"`
 		Position Position `json:"position"`
 	}
 
@@ -158,6 +159,7 @@ func (r *Room) getPlayerPositions() []PositionUpdate {
 		positions = append(positions, PositionUpdate{
 			ID:       id,
 			Position: player.position,
+			Name:     player.name,
 		})
 	}
 	return positions
@@ -356,10 +358,13 @@ func (gs *GameServer) handleWebSocket(w http.ResponseWriter, r *http.Request) {
 				Players:     room.getPlayerPositions(),
 			})
 
+			fmt.Println("player name: ", player.name)
+
 			// Notify other players about new player
 			room.broadcastExclusive(playerID, ClientMessage{
 				MessageType: "add-player",
 				ID:          playerID,
+				Name:        player.name,
 				Position:    player.position,
 			})
 

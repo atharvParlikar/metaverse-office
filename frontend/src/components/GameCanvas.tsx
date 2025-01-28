@@ -50,6 +50,7 @@ export const GameCanvas = () => {
 
     //  HACK: Figure out how to properly divide canvas into blocks, these magic numbers work for now...
     const hero = new Hero(gridCells(5.5), gridCells(3.75)); // idk man these numbers seem to work after scaling
+    hero.body.text = "me";
     heroRef.current = hero;
 
     const camera = new Camera();
@@ -62,11 +63,21 @@ export const GameCanvas = () => {
     events.on(
       "add-player",
       mainScene,
-      ({ id, position }: { id: number; position: Vector2 }) => {
+      ({
+        id,
+        position,
+        name,
+      }: {
+        id: number;
+        position: Vector2;
+        name: string;
+      }) => {
         const newPlayer = new RemoteHero(
           gridCells(position.x),
           gridCells(position.y),
         );
+        console.log("Setting new player name: ", name);
+        newPlayer.body.text = name;
         newPlayer.id = id;
         mainScene.addChild(newPlayer);
         addPlayer(id, newPlayer);
@@ -147,7 +158,9 @@ export const GameCanvas = () => {
     });
 
     addSocketMessageEvent("players", (parsedMessage) => {
-      const { players }: { players: { id: number; position: Vector2Raw }[] } =
+      const {
+        players,
+      }: { players: { id: number; position: Vector2Raw; name: string }[] } =
         parsedMessage;
 
       players.forEach((player) => {
@@ -155,6 +168,7 @@ export const GameCanvas = () => {
           events.emit("add-player", {
             id: player.id,
             position: new Vector2(player.position.x, player.position.y),
+            name: player.name,
           });
       });
     });
@@ -163,12 +177,17 @@ export const GameCanvas = () => {
       const {
         id,
         position,
-      }: { id: number; position: { x: number; y: number } } = parsedMessage;
+        name,
+      }: { id: number; position: { x: number; y: number }; name: string } =
+        parsedMessage;
+
+      console.log("parsedMessage: ", parsedMessage);
 
       if (position) {
         events.emit("add-player", {
           id,
           position: new Vector2(position.x, position.y),
+          name,
         });
       }
     });
