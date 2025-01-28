@@ -15,10 +15,10 @@ walls.add(`80,80`);
 walls.add(`128,48`);
 walls.add(`144,48`);
 
-walls.add(`112,80`); // water
-walls.add(`128,80`);
-walls.add(`144,80`);
-walls.add(`160,80`);
+walls.add(`624,360`); // water
+walls.add(`720,360`);
+walls.add(`816,360`);
+walls.add(`912,360`);
 
 walls.add(`192,96`); // rocks
 walls.add(`208,96`);

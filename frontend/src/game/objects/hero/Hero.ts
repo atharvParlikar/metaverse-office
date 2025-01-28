@@ -46,6 +46,7 @@ export class Hero extends GameObject {
       resource: resources.images.shadow,
       frameSize: new Vector2(32, 32),
       position: new Vector2(-8, -19),
+      scale: 6,
     });
 
     this.addChild(this.shadow);
@@ -57,7 +58,9 @@ export class Hero extends GameObject {
       hFrames: 3,
       vFrames: 8,
       frame: 1,
-      position: new Vector2(-8, -20),
+      scale: 6,
+      // position: new Vector2(-8, -20),
+      position: new Vector2(0, 0),
       animations: new Animations({
         walkDown: new FrameIndexPattern(WALK_DOWN),
         walkUp: new FrameIndexPattern(WALK_UP),
@@ -69,6 +72,7 @@ export class Hero extends GameObject {
         standLeft: new FrameIndexPattern(STAND_LEFT),
         standRight: new FrameIndexPattern(STAND_RIGHT),
       }),
+      text: null,
     });
 
     this.destinationPosition = this.position.copy();
@@ -95,7 +99,7 @@ export class Hero extends GameObject {
   }
 
   step(delta: number, root: GameObject) {
-    const distance = moveTowards(this, this.destinationPosition, 1.5);
+    const distance = moveTowards(this, this.destinationPosition, 1.5 * 6);
     const hasArrived = distance <= 1;
     if (hasArrived) {
       this.tryMove(root);
@@ -108,7 +112,7 @@ export class Hero extends GameObject {
         (player.position.x - this.position.x) ** 2 +
           (player.position.y - this.position.y) ** 2,
       );
-      if (distance <= 32) {
+      if (distance <= 32 * 6) {
         useStore.getState().setCanCall(true);
         useStore.getState().setToCall(player);
       } else {
@@ -176,7 +180,7 @@ export class Hero extends GameObject {
     // for movement
     let nextX = this.destinationPosition.x;
     let nextY = this.destinationPosition.y;
-    const gridSize = 16;
+    const gridSize = 16 * 6;
 
     if (input.direction === DOWN) {
       this.body.animations?.play("walkDown");

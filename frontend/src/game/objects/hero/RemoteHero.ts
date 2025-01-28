@@ -33,6 +33,7 @@ export class RemoteHero extends GameObject {
       resource: resources.images.shadow,
       frameSize: new Vector2(32, 32),
       position: new Vector2(-8, -19),
+      scale: 6,
     });
 
     this.addChild(this.shadow);
@@ -45,7 +46,7 @@ export class RemoteHero extends GameObject {
       hFrames: 3,
       vFrames: 8,
       frame: 1,
-      position: new Vector2(-8, -20),
+      position: new Vector2(0, 0),
       animations: new Animations({
         standDown: new FrameIndexPattern(STAND_DOWN),
         standUp: new FrameIndexPattern(STAND_UP),
@@ -57,6 +58,7 @@ export class RemoteHero extends GameObject {
         walkLeft: new FrameIndexPattern(WALK_LEFT),
         walkRight: new FrameIndexPattern(WALK_RIGHT),
       }),
+      scale: 6,
     });
 
     this.addChild(this.body);
@@ -65,7 +67,7 @@ export class RemoteHero extends GameObject {
   }
 
   step() {
-    moveTowards(this, this.destinationPosition, 1.5);
+    moveTowards(this, this.destinationPosition, 1.5 * 6);
 
     // const hasArrived = distance <= 1;
 

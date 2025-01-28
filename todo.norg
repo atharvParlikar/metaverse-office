@@ -8,7 +8,6 @@
    -- (x) create interface for starting call
    -- (x) audio
    -- (x) video
-
    - (x) User management (use supabase)
    -- (x) add router in frontend
    -- (x) setup supabase
@@ -55,7 +54,8 @@
    - ( ) player states (working / available / unavailable / focused / etc...) (today)
 
 ** Optional
-   - ( ) Animation for remote player ( ) UI with names and shit
+   - ( ) Animation for remote player
+   - ( ) UI with names and shit
    - ( ) Full User management
    - ( ) Admin role (really maybe depending if on how hard it is)
    - ( ) Scale the sprites properly to render text on canvas

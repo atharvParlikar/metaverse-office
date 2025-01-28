@@ -47,10 +47,10 @@ export const ChatPanel = ({ className }: { className?: string }) => {
   };
 
   return (
-    <div className={`${className} flex flex-col h-full`}>
+    <div className={`${className} flex flex-col h-full m-2`}>
       <h1 className="text-2xl mx-2">Chat</h1>
       <div className="h-full overflow-scroll">
-        <div className="flex flex-col gap-2 p-2 my-2">
+        <div className="flex flex-col gap-2 p-2 my-2 bg-gray-200 h-full">
           {chatHistory.map((chat, index) => {
             console.log(chat.name);
             console.log(chat.message);
@@ -58,7 +58,7 @@ export const ChatPanel = ({ className }: { className?: string }) => {
               <div key={index}>
                 <span className="text-base">{chat.name}</span>
                 {": "}
-                <span className="text-base">{chat.message}</span>
+                <span className="text-base ">{chat.message}</span>
               </div>
             );
           })}

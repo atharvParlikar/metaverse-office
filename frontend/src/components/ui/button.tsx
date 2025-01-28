@@ -12,7 +12,7 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
       <button
         className={cn(
           // Base styles
-          "relative select-none font-bold border-2 active:translate-y-[2px] transition-transform w-fit rounded-md",
+          "relative select-none border-2 active:translate-y-[2px] transition-transform w-fit rounded-md",
           // Pixel art effect
           "[image-rendering:pixelated]",
           // Variants
@@ -38,4 +38,3 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
 Button.displayName = "Button";
 
 export { Button };
-

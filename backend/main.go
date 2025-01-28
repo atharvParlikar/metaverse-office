@@ -40,8 +40,8 @@ type Player struct {
 
 // Position represents X,Y coordinates
 type Position struct {
-	X int `json:"x"`
-	Y int `json:"y"`
+	X float32 `json:"x"`
+	Y float32 `json:"y"`
 }
 
 // Message types
@@ -295,7 +295,7 @@ func (gs *GameServer) handleWebSocket(w http.ResponseWriter, r *http.Request) {
 					player = Player{
 						id:              playerID,
 						conn:            conn,
-						position:        Position{X: 6, Y: 5}, // Default position
+						position:        Position{X: 5.5, Y: 3.75}, // Default position
 						email:           email,
 						name:            name,
 						isAuthenticated: true,

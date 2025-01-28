@@ -1,5 +1,5 @@
 /* eslint-disable react-hooks/exhaustive-deps */
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 import { Sprite } from "../game/Sprite";
 import { resources } from "../game/Resource";
 import { Vector2, Vector2Raw } from "../game/Vector2";
@@ -14,16 +14,15 @@ import { events } from "../game/Events";
 import { RemoteHero } from "../game/objects/hero/RemoteHero";
 import { useStore } from "../util/store";
 
+const WIDTH = 320 * 6;
+const HEIGHT = 180 * 6;
+
 export const GameCanvas = () => {
   const canvasRef = useRef<HTMLCanvasElement | null>(null!);
   const heroRef = useRef<Hero | null>(null!);
   const socket = getSocket();
   const positionInitSent = useRef<boolean>(false);
-  const { setId, addPlayer, canCall, toCall, wsReady, onCall, connections } =
-    useStore();
-  const [logs, setLogs] = useState<string[]>([]);
-
-  const log = (str: string) => setLogs((x) => [...x, str]);
+  const { setId, addPlayer, wsReady } = useStore();
 
   useEffect(() => {
     const canvas = canvasRef.current!;
@@ -39,15 +38,18 @@ export const GameCanvas = () => {
     // Sprites
     const skySprite = new Sprite({
       resource: resources.images.sky,
-      frameSize: new Vector2(320, 180),
+      frameSize: new Vector2(HEIGHT, WIDTH),
+      scale: 6,
     });
 
     const groundSprite = new Sprite({
       resource: resources.images.ground,
-      frameSize: new Vector2(320, 180),
+      frameSize: new Vector2(HEIGHT, WIDTH),
+      scale: 6,
     });
 
-    const hero = new Hero(gridCells(6), gridCells(5));
+    //  HACK: Figure out how to properly divide canvas into blocks, these magic numbers work for now...
+    const hero = new Hero(gridCells(5.5), gridCells(3.75)); // idk man these numbers seem to work after scaling
     heroRef.current = hero;
 
     const camera = new Camera();
@@ -172,65 +174,9 @@ export const GameCanvas = () => {
     });
   }, [socket, wsReady]);
 
-  const handleCall = async () => {
-    log("call button clicked!!!");
-    console.log("call button clicked!!!");
-
-    if (onCall) {
-      connections.forEach((connection) => {
-        connection.close();
-      });
-      return;
-    }
-
-    if (!toCall) return;
-    if (!toCall.id) return;
-
-    // no need to check for existance of socket here
-    socket?.send(
-      JSON.stringify({
-        messageType: "callConsentReq",
-        data: {
-          id: toCall.id,
-        },
-      }),
-    );
-  };
-
   return (
     <div>
-      <canvas ref={canvasRef} width={320} height={180}></canvas>
-      <div>
-        <button
-          className={`border-2 border-black p-2 px-4 ${onCall ? "bg-green-400" : canCall ? "bg-green-400" : "bg-red-600 text-white"}`}
-          disabled={onCall ? false : !canCall}
-          onClick={handleCall}
-        >
-          {!onCall ? "call" : "disconnect"}
-        </button>
-        <button
-          onClick={() => {
-            const socket = getSocket();
-            socket?.send(
-              JSON.stringify({
-                messageType: "room",
-                data: {
-                  roomId: "123",
-                },
-              }),
-            );
-          }}
-        >
-          Debug
-        </button>
-      </div>
-      <p>{toCall && toCall.id}</p>
-      <p>Logs</p>
-      <ul>
-        {logs.map((log, index) => (
-          <li key={index}>{log}</li>
-        ))}
-      </ul>
+      <canvas ref={canvasRef} width={WIDTH} height={HEIGHT} />
     </div>
   );
 };

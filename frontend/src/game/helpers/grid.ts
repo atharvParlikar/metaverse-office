@@ -1,4 +1,4 @@
-export const gridCells = (n: number) => n * 16;
+export const gridCells = (n: number) => n * 16 * 6;
 
 export const isSpaceFree = (walls: Set<string>, x: number, y: number) => {
   const str = `${x},${y}`;
