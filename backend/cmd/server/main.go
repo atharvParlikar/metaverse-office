@@ -4,9 +4,9 @@ import (
 	"log"
 	"net/http"
 
-	"github.com/atharvparlikar/metaverse-office/internal/handlers"
-	"github.com/atharvparlikar/metaverse-office/internal/middleware"
-	"github.com/atharvparlikar/metaverse-office/internal/services"
+	"github.com/atharvparlikar/metaverse-office/backend/internal/handlers"
+	"github.com/atharvparlikar/metaverse-office/backend/internal/middleware"
+	"github.com/atharvparlikar/metaverse-office/backend/internal/services"
 )
 
 func main() {

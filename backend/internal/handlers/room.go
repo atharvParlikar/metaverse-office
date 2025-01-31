@@ -4,9 +4,9 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"github.com/atharvparlikar/metaverse-office/internal/auth"
-	"github.com/atharvparlikar/metaverse-office/internal/models"
-	"github.com/atharvparlikar/metaverse-office/internal/services"
+	"github.com/atharvparlikar/metaverse-office/backend/internal/auth"
+	"github.com/atharvparlikar/metaverse-office/backend/internal/models"
+	"github.com/atharvparlikar/metaverse-office/backend/internal/services"
 )
 
 type RoomHandler struct {

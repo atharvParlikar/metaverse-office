@@ -1,4 +1,4 @@
-module metaverse-office-backend
+module github.com/atharvParlikar/metaverse-office/backend
 
 go 1.22.3
 

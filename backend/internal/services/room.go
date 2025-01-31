@@ -3,7 +3,7 @@ package services
 import (
 	"sync"
 
-	"github.com/user/project/internal/models"
+	"github.com/atharvparlikar/metaverse-office/backend/internal/models"
 )
 
 type Room struct {

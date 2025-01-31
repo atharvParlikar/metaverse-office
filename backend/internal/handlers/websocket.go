@@ -4,8 +4,8 @@ import (
 	"log"
 	"net/http"
 
-	"github.com/atharvparlikar/metaverse-office/internal/models"
-	"github.com/atharvparlikar/metaverse-office/internal/services"
+	"github.com/atharvparlikar/metaverse-office/backend/internal/models"
+	"github.com/atharvparlikar/metaverse-office/backend/internal/services"
 	"github.com/gorilla/websocket"
 )
 
