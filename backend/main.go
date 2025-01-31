@@ -23,9 +23,11 @@ type GameServer struct {
 
 // Room represents a game room with connected players
 type Room struct {
-	id      string
-	players map[int]*Player
-	mu      sync.RWMutex
+	id              string
+	private         bool
+	allowed_players []string
+	players         map[int]*Player
+	mu              sync.RWMutex
 }
 
 // Player represents a connected player
@@ -33,6 +35,7 @@ type Player struct {
 	id              int
 	name            string
 	email           string
+	roomId          string
 	conn            *websocket.Conn
 	position        Position
 	isAuthenticated bool
@@ -110,6 +113,8 @@ func (r *Room) addPlayer(player *Player) {
 	r.mu.Lock()
 	r.players[player.id] = player
 	r.mu.Unlock()
+
+	player.roomId = r.id
 }
 
 func (r *Room) removePlayer(id int) {
@@ -338,10 +343,13 @@ func (gs *GameServer) handleWebSocket(w http.ResponseWriter, r *http.Request) {
 
 			// Create or get the default room
 			room = gs.getRoom(roomId.RoomId)
+			//  TODO: Do not just create a room whenever, it does not exist have a seprate page.
 			if room == nil {
 				room = gs.createRoom(roomId.RoomId)
+				room.private = true
 			}
 
+			//  NOTE: idk seems kinda useless as every socket connection gets a new id
 			if room.players[playerID] != nil {
 				break
 			}
@@ -349,8 +357,30 @@ func (gs *GameServer) handleWebSocket(w http.ResponseWriter, r *http.Request) {
 			fmt.Println("room: ", roomId.RoomId)
 			fmt.Printf("[+] Player %v has connected\n", playerID)
 
+			is_player_allowed := true
+
+			if room.private {
+				is_player_allowed = false
+				for _, email := range room.allowed_players {
+					if player.email == email {
+						is_player_allowed = true
+						break
+					}
+				}
+			}
+
+			if !is_player_allowed {
+				sendSecureMessage(&player, ClientMessage{
+					MessageType: "error",
+					Error:       "you are not allowed in the room, ask creator to add you or enter valid code.",
+				})
+				return
+			}
+
 			room.addPlayer(&player)
 			defer room.removePlayer(playerID)
+
+			fmt.Println("[*] positions: ", room.getPlayerPositions())
 
 			// Send existing players to new player
 			sendSecureMessage(&player, ClientMessage{
@@ -378,7 +408,7 @@ func (gs *GameServer) handleWebSocket(w http.ResponseWriter, r *http.Request) {
 				break
 			}
 
-			gs.rooms["123"].players[playerId.ID].conn.WriteJSON(ClientMessage{
+			gs.rooms[player.roomId].players[playerId.ID].conn.WriteJSON(ClientMessage{
 				MessageType: "callConsentReq",
 				ID:          playerID,
 			})

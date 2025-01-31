@@ -17,7 +17,7 @@ import { useStore } from "../util/store";
 const WIDTH = 320 * 6;
 const HEIGHT = 180 * 6;
 
-export const GameCanvas = () => {
+export const GameCanvas = ({ className }: { className: string }) => {
   const canvasRef = useRef<HTMLCanvasElement | null>(null!);
   const heroRef = useRef<Hero | null>(null!);
   const socket = getSocket();
@@ -72,10 +72,7 @@ export const GameCanvas = () => {
         position: Vector2;
         name: string;
       }) => {
-        const newPlayer = new RemoteHero(
-          gridCells(position.x),
-          gridCells(position.y),
-        );
+        const newPlayer = new RemoteHero(position.x, position.y);
         console.log("Setting new player name: ", name);
         newPlayer.body.text = name;
         newPlayer.id = id;
@@ -163,11 +160,17 @@ export const GameCanvas = () => {
       }: { players: { id: number; position: Vector2Raw; name: string }[] } =
         parsedMessage;
 
+      console.log("got players:");
+      console.log(parsedMessage);
+
       players.forEach((player) => {
         if (player.id !== heroRef.current?.id)
           events.emit("add-player", {
             id: player.id,
-            position: new Vector2(player.position.x, player.position.y),
+            position: new Vector2(
+              player.position.x / (16 * 6),
+              player.position.y / (16 * 6),
+            ),
             name: player.name,
           });
       });
@@ -194,7 +197,7 @@ export const GameCanvas = () => {
   }, [socket, wsReady]);
 
   return (
-    <div>
+    <div className={`${className}`}>
       <canvas ref={canvasRef} width={WIDTH} height={HEIGHT} />
     </div>
   );

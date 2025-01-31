@@ -77,6 +77,14 @@ export const Room = () => {
         }),
       );
 
+      addSocketMessageEvent("error", (parsedMessage) => {
+        const { error }: { error: string } = parsedMessage;
+
+        if (error) {
+          toast.error(error);
+        }
+      });
+
       addSocketMessageEvent("auth", (parsedMessage) => {
         const { authenticated } = parsedMessage;
         if (authenticated) {
@@ -256,11 +264,11 @@ export const Room = () => {
   }, [wsAuthenticated]);
 
   return (
-    <div className="grid grid-cols-[4fr_1fr]">
-      <GameCanvas />
-      <div className="flex flex-col h-full ">
-        <VideoCall />
-        <ChatPanel />
+    <div className="h-screen flex flex-col xl:grid xl:grid-cols-[4fr_1fr] md:grid-rows-none grid-rows-[minmax(0,1fr)_auto] overflow-hidden">
+      <GameCanvas className="md:h-full h-[70vh] min-h-[300px]" />
+      <div className="md:h-full flex xl:flex-col border-t md:border-t-0 md:border-l">
+        <VideoCall className="flex-1 min-h-[200px] md:min-h-0 my-auto" />
+        <ChatPanel className="h-[30vh] md:h-auto md:flex-1" />
       </div>
     </div>
   );

@@ -24,8 +24,9 @@
    --- (x) (server) modify the struct to use name
    --- (x) (client) change id with name in chat
 
+   - (x) make it responsive
    - (x) use real name instead of id
-   - ( ) protect a room
+   - ( ) protect a room (code or invite)
    - ( ) optimize clientMessage on the backend that shit is bloated rn
    - ( ) call consent is only on application level, do it on peer level (otherwise hackers could just emulte a consent from outside the application)
 
@@ -36,12 +37,13 @@
    --- (x) player does not render
    - (x) camera does not stop capturing even after ending call
    - ( ) sometimes player keeps walking in some direction and does not stop
-   -- not sure why this happens investigate
+   -- not sure why this happens, investigate
    - (x) server is adding same player multiple times if refreshed (or hot reloaded during dev)
+   - ( ) cannot get player on through players if the player is not in spawn location.
 
 ** Hard problems (for me cuz me no game dev)
-   - ( ) scale the sprites
-   - ( ) tilemap instead of full image sprites
+   - (x) scale the sprites
+   - ( ) tilemap instead of full image sprites (do we really even need this it's just a side project im no game dev)
 
 ** Trivial stuff
    - (x) bug in chat (sometimes you get message sometimes you don't) (idk how it fixed itself)

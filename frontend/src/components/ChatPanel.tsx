@@ -56,9 +56,9 @@ export const ChatPanel = ({ className }: { className?: string }) => {
             console.log(chat.message);
             return (
               <div key={index}>
-                <span className="text-base">{chat.name}</span>
+                <span className="text-md">{chat.name}</span>
                 {": "}
-                <span className="text-base ">{chat.message}</span>
+                <span className="text-md">{chat.message}</span>
               </div>
             );
           })}
