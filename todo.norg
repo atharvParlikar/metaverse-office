@@ -39,11 +39,13 @@
    - ( ) sometimes player keeps walking in some direction and does not stop
    -- not sure why this happens, investigate
    - (x) server is adding same player multiple times if refreshed (or hot reloaded during dev)
-   - ( ) cannot get player on through players if the player is not in spawn location.
+   - (x) cannot get player on through players if the player is not in spawn location.
 
 ** Hard problems (for me cuz me no game dev)
    - (x) scale the sprites
    - ( ) tilemap instead of full image sprites (do we really even need this it's just a side project im no game dev)
+   - ( ) not sure what happens when the map is larger than the screen. (prerqe - tilemaps)
+
 
 ** Trivial stuff
    - (x) bug in chat (sometimes you get message sometimes you don't) (idk how it fixed itself)
@@ -57,10 +59,10 @@
 
 ** Optional
    - ( ) Animation for remote player
-   - ( ) UI with names and shit
+   - (x) UI with names and shit
    - ( ) Full User management
    - ( ) Admin role (really maybe depending if on how hard it is)
-   - ( ) Scale the sprites properly to render text on canvas
+   - (x) Scale the sprites properly to render text on canvas
    - ( ) use a proper tilemap instead of placing images like a moron
    - ( ) add a redis database for persistance
    - ( ) websocket rate limiting

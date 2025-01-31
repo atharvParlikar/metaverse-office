@@ -82,6 +82,7 @@ export const Room = () => {
 
         if (error) {
           toast.error(error);
+          navigate("/");
         }
       });
 

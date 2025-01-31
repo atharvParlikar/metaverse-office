@@ -6,12 +6,18 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"strings"
 	"sync"
 
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/gorilla/websocket"
 	"github.com/joho/godotenv"
 )
+
+// http server types
+type JoinRoomRequest struct {
+	RoomID string `json:"roomId"`
+}
 
 // GameServer manages the overall game state and connections
 type GameServer struct {
@@ -182,6 +188,72 @@ func sendSecureMessage(player *Player, message interface{}) error {
 	return player.conn.WriteJSON(message)
 }
 
+func validateHeaderJWT(r *http.Request) (*jwt.Token, error) {
+	err := godotenv.Load()
+	if err != nil {
+		return nil, fmt.Errorf("error loading .env file: %v", err)
+	}
+
+	authHeader := r.Header.Get("Authorization")
+	if authHeader == "" {
+		return nil, fmt.Errorf("missing authorization header")
+	}
+
+	tokenString := strings.TrimPrefix(authHeader, "Bearer ")
+	jwtSecret := os.Getenv("SUPABASE_JWT_SECRET")
+
+	return jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
+		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
+		}
+		return []byte(jwtSecret), nil
+	})
+}
+
+func (gs *GameServer) handleJoinRoom(w http.ResponseWriter, r *http.Request) {
+	token, err := validateHeaderJWT(r)
+	if err != nil {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	claims := token.Claims.(jwt.MapClaims)
+	metadata := claims["user_metadata"].(map[string]interface{})
+	userEmail := metadata["email"].(string)
+
+	var req JoinRoomRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, "Invalid request", http.StatusBadRequest)
+		return
+	}
+
+	room := gs.getRoom(req.RoomID)
+	if room == nil {
+		http.Error(w, "Room not found", http.StatusNotFound)
+		return
+	}
+
+	if room.private {
+		allowed := false
+		for _, email := range room.allowed_players {
+			if email == userEmail {
+				allowed = true
+				break
+			}
+		}
+		if !allowed {
+			http.Error(w, "Not allowed in private room", http.StatusForbidden)
+			return
+		}
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]interface{}{
+		"allowed": true,
+		"roomId":  req.RoomID,
+	})
+}
+
 func (gs *GameServer) handleWebSocket(w http.ResponseWriter, r *http.Request) {
 	conn, err := gs.upgrader.Upgrade(w, r, nil)
 	if err != nil {
@@ -345,8 +417,13 @@ func (gs *GameServer) handleWebSocket(w http.ResponseWriter, r *http.Request) {
 			room = gs.getRoom(roomId.RoomId)
 			//  TODO: Do not just create a room whenever, it does not exist have a seprate page.
 			if room == nil {
-				room = gs.createRoom(roomId.RoomId)
-				room.private = true
+				sendSecureMessage(&player, ClientMessage{
+					MessageType: "error",
+					Error:       "room does not exist",
+				})
+				return
+				// room = gs.createRoom(roomId.RoomId)
+				// room.private = true
 			}
 
 			//  NOTE: idk seems kinda useless as every socket connection gets a new id
@@ -440,10 +517,31 @@ func (gs *GameServer) handleWebSocket(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// Add this new middleware function
+func enableCORS(next http.HandlerFunc) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		// Set CORS headers
+		w.Header().Set("Access-Control-Allow-Origin", "*") // Adjust in production
+		w.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE")
+		w.Header().Set("Access-Control-Allow-Headers", "Accept, Content-Type, Content-Length, Accept-Encoding, Authorization")
+
+		// Handle preflight requests
+		if r.Method == "OPTIONS" {
+			w.WriteHeader(http.StatusOK)
+			return
+		}
+
+		// Pass down the request to the next handler
+		next.ServeHTTP(w, r)
+	}
+}
+
 func main() {
 	server := NewGameServer()
 
-	http.HandleFunc("/ws", server.handleWebSocket)
+	http.HandleFunc("/validate-room", enableCORS(server.handleJoinRoom))
+
+	http.HandleFunc("/ws", enableCORS(server.handleWebSocket))
 
 	port := "8080"
 	fmt.Printf("Starting server on port %s\n", port)
