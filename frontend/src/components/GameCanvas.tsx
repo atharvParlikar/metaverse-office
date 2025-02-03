@@ -12,6 +12,7 @@ import { Camera } from "../game/Camera";
 import { addSocketMessageEvent, getSocket } from "../util/socketChannel";
 import { events } from "../game/Events";
 import { RemoteHero } from "../game/objects/hero/RemoteHero";
+import { Grid } from "../game/objects/Grid";
 import { useStore } from "../util/store";
 
 const WIDTH = 320 * 6;
@@ -54,9 +55,11 @@ export const GameCanvas = ({ className }: { className: string }) => {
     heroRef.current = hero;
 
     const camera = new Camera();
+    const grid = new Grid(camera);
 
     // Adding sprites to main main
     mainScene.addChild(groundSprite);
+    mainScene.addChild(grid);
     mainScene.addChild(hero);
     mainScene.addChild(camera);
 
@@ -80,6 +83,16 @@ export const GameCanvas = ({ className }: { className: string }) => {
         addPlayer(id, newPlayer);
       },
     );
+
+    events.on("remove-player", mainScene, ({ id }: { id: number }) => {
+      mainScene.children = mainScene.children.filter((child) => {
+        if ("id" in child) {
+          // checking if child is Hero or RemoteHero
+          return child.id !== id;
+        }
+        return true;
+      });
+    });
 
     const update = (delta: number) => {
       mainScene.stepEntry(delta, mainScene);
@@ -193,6 +206,11 @@ export const GameCanvas = ({ className }: { className: string }) => {
           name,
         });
       }
+    });
+
+    addSocketMessageEvent("player-left", (parsedMessage) => {
+      const { id } = parsedMessage;
+      events.emit("remove-player", { id });
     });
   }, [socket, wsReady]);
 

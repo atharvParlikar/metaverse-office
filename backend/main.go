@@ -19,6 +19,10 @@ type JoinRoomRequest struct {
 	RoomID string `json:"roomId"`
 }
 
+type CreateRoomRequest struct {
+	RoomID string `json:"roomId"`
+}
+
 // GameServer manages the overall game state and connections
 type GameServer struct {
 	rooms           map[string]*Room
@@ -207,6 +211,37 @@ func validateHeaderJWT(r *http.Request) (*jwt.Token, error) {
 			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
 		}
 		return []byte(jwtSecret), nil
+	})
+}
+
+func (gs *GameServer) handleCreateRoom(w http.ResponseWriter, r *http.Request) {
+	_, err := validateHeaderJWT(r)
+
+	if err != nil {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	var req CreateRoomRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, "Invalid request", http.StatusBadRequest)
+	}
+
+	if gs.rooms[req.RoomID] != nil {
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(map[string]interface{}{
+			"success": false,
+			"error":   "room already exists",
+		})
+		return
+	}
+
+	gs.createRoom(req.RoomID)
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]interface{}{
+		"success": true,
+		"roomId":  req.RoomID,
 	})
 }
 
@@ -517,7 +552,6 @@ func (gs *GameServer) handleWebSocket(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// Add this new middleware function
 func enableCORS(next http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		// Set CORS headers
@@ -540,6 +574,7 @@ func main() {
 	server := NewGameServer()
 
 	http.HandleFunc("/validate-room", enableCORS(server.handleJoinRoom))
+	http.HandleFunc("/create-room", enableCORS(server.handleCreateRoom))
 
 	http.HandleFunc("/ws", enableCORS(server.handleWebSocket))
 
