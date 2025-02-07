@@ -14,6 +14,7 @@ import { events } from "../game/Events";
 import { RemoteHero } from "../game/objects/hero/RemoteHero";
 import { Grid } from "../game/objects/Grid";
 import { useStore } from "../util/store";
+import { Tilemap } from "../game/objects/Tilemap";
 
 const WIDTH = 320 * 6;
 const HEIGHT = 180 * 6;
@@ -43,14 +44,47 @@ export const GameCanvas = ({ className }: { className: string }) => {
       scale: 6,
     });
 
-    const groundSprite = new Sprite({
-      resource: resources.images.ground,
-      frameSize: new Vector2(HEIGHT, WIDTH),
-      scale: 6,
+    // const groundSprite = new Sprite({
+    //   resource: resources.images.ground,
+    //   frameSize: new Vector2(HEIGHT, WIDTH),
+    //   scale: 6,
+    // });
+
+    const groundTilemap = new Tilemap({
+      position: new Vector2(0, 0),
+      mapWidth: 20,
+      mapHeight: 15,
+      tilesetSrc: "../../public/sprites/spritesheet.png",
+      tilesPerRow: 4,
     });
 
+    const mapData = [
+      [5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5],
+      [5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5],
+      [5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5],
+      [5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5],
+      [5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5],
+      [5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5],
+      [5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5],
+      [5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5],
+      [5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5],
+      [5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5],
+      [5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5],
+      [5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5],
+      [5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5],
+      [5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5],
+      [5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5],
+    ];
+
+    groundTilemap.loadMap(mapData);
+
     //  HACK: Figure out how to properly divide canvas into blocks, these magic numbers work for now...
-    const hero = new Hero(gridCells(5.5), gridCells(3.75)); // idk man these numbers seem to work after scaling
+    const HERO_OFFSET_X = 0.5;
+    const HERO_OFFSET_y = 0.75;
+    const hero = new Hero(
+      gridCells(5 + HERO_OFFSET_X),
+      gridCells(3 + HERO_OFFSET_y),
+    );
     hero.body.text = "me";
     heroRef.current = hero;
 
@@ -58,7 +92,7 @@ export const GameCanvas = ({ className }: { className: string }) => {
     const grid = new Grid(camera);
 
     // Adding sprites to main main
-    mainScene.addChild(groundSprite);
+    mainScene.addChild(groundTilemap);
     mainScene.addChild(grid);
     mainScene.addChild(hero);
     mainScene.addChild(camera);
@@ -75,7 +109,10 @@ export const GameCanvas = ({ className }: { className: string }) => {
         position: Vector2;
         name: string;
       }) => {
-        const newPlayer = new RemoteHero(position.x, position.y);
+        const newPlayer = new RemoteHero(
+          gridCells(position.x),
+          gridCells(position.y),
+        );
         console.log("Setting new player name: ", name);
         newPlayer.body.text = name;
         newPlayer.id = id;
@@ -180,10 +217,7 @@ export const GameCanvas = ({ className }: { className: string }) => {
         if (player.id !== heroRef.current?.id)
           events.emit("add-player", {
             id: player.id,
-            position: new Vector2(
-              player.position.x / (16 * 6),
-              player.position.y / (16 * 6),
-            ),
+            position: new Vector2(player.position.x, player.position.y),
             name: player.name,
           });
       });

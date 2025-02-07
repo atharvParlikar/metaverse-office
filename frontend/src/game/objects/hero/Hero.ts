@@ -59,7 +59,6 @@ export class Hero extends GameObject {
       vFrames: 8,
       frame: 1,
       scale: 6,
-      // position: new Vector2(-8, -20),
       position: new Vector2(0, 0),
       animations: new Animations({
         walkDown: new FrameIndexPattern(WALK_DOWN),

@@ -44,7 +44,7 @@
 ** Hard problems (for me cuz me no game dev)
    - (x) scale the sprites
    - ( ) tilemap instead of full image sprites (do we really even need this it's just a side project im no game dev)
-   - ( ) not sure what happens when the map is larger than the screen. (prerqe - tilemaps)
+   - ( ) not sure what happens when the map is larger than the screen. (prerqe - tilemaps) (ans: nothing, camera stays center to you)
 
 
 ** Trivial stuff
